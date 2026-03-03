@@ -1,1 +1,1 @@
-web: gunicorn run:app
+web: gunicorn "scholar_ride:create_app()"
