@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block content %}
+<h4 style="color:#1B3A6B;" class="mb-4">
+    <i class="bi bi-bus-front"></i> Campus Transport Feed
+</h4>
+
+{% if announcements %}
+    {% for ann in announcements %}
+    <div class="card mb-3 p-3 border-start border-4
+        {% if ann.category == 'breakdown' %}border-danger
+        {% elif ann.category == 'delay' %}border-warning
+        {% elif ann.category == 'cancellation' %}border-danger
+        {% else %}border-primary{% endif %}">
+        <div class="d-flex justify-content-between">
+            <h5>{{ ann.title }}
+                <span class="badge ms-2
+                    {% if ann.category == 'breakdown' %}bg-danger
+                    {% elif ann.category == 'delay' %}bg-warning
+                    {% elif ann.category == 'cancellation' %}bg-danger
+                    {% else %}bg-info{% endif %}">
+                    {{ ann.category | upper }}
+                </span>
+            </h5>
+            <small class="text-muted">
+                {{ ann.created_at.strftime('%d %b %Y at %H:%M') }}
+            </small>
+        </div>
+        <p class="mb-0">{{ ann.body }}</p>
+    </div>
+    {% endfor %}
+{% else %}
+    <div class="text-center mt-5">
+        <i class="bi bi-bus-front" style="font-size:4rem; color:#ccc;"></i>
+        <p class="text-muted mt-3">No transport updates right now.</p>
+    </div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card p-4 mb-3">
+            <h4 style="color:#1B3A6B;">
+                <i class="bi bi-geo-alt-fill"></i> {{ ride.origin }} 
+                <i class="bi bi-arrow-right"></i> {{ ride.destination }}
+            </h4>
+            <hr>
+            <div class="row">
+                <div class="col-md-6">
+                    <p><i class="bi bi-clock"></i> <strong>Departure:</strong><br>
+                    {{ ride.departure_time.strftime('%d %B %Y at %H:%M') }}</p>
+                    <p><i class="bi bi-person-fill"></i> <strong>Driver:</strong><br>
+                    {{ ride.driver.full_name }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><i class="bi bi-people-fill"></i> <strong>Seats Available:</strong><br>
+                    {% if ride.available_seats > 0 %}
+                        <span class="badge bg-success fs-6">{{ ride.available_seats }} left</span>
+                    {% else %}
+                        <span class="badge bg-danger fs-6">Full</span>
+                    {% endif %}
+                    </p>
+                    <p><i class="bi bi-info-circle"></i> <strong>Status:</strong><br>
+                    <span class="badge 
+                        {% if ride.status == 'active' %}bg-primary
+                        {% elif ride.status == 'cancelled' %}bg-danger
+                        {% elif ride.status == 'delayed' %}bg-warning
+                        {% else %}bg-secondary{% endif %}">
+                        {{ ride.status | upper }}
+                    </span></p>
+                </div>
+            </div>
+
+            {% if current_user.role == 'student' and ride.status == 'active' %}
+                {% if already_booked %}
+                    <div class="alert alert-info mt-3">
+                        <i class="bi bi-check-circle"></i> 
+                        You have already requested this ride. Status: <strong>{{ booking_status }}</strong>
+                    </div>
+                {% elif ride.available_seats > 0 %}
+                    <form method="POST" action="/bookings/request/{{ ride.id }}">
+                        <button type="submit" class="btn btn-primary mt-3 w-100">
+                            <i class="bi bi-car-front"></i> Request a Seat
+                        </button>
+                    </form>
+                {% else %}
+                    <div class="alert alert-danger mt-3">This ride is full.</div>
+                {% endif %}
+            {% endif %}
+
+            {% if current_user.id == ride.driver_id %}
+            <hr>
+            <h6>Update Ride Status</h6>
+            <form method="POST" action="/rides/{{ ride.id }}/update">
+                <div class="row g-2">
+                    <div class="col-md-8">
+                        <select name="status" class="form-select">
+                            <option value="active">Active</option>
+                            <option value="delayed">Delayed</option>
+                            <option value="breakdown">Breakdown</option>
+                            <option value="cancelled">Cancelled</option>
+                            <option value="completed">Completed</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <button type="submit" class="btn btn-warning w-100">Update</button>
+                    </div>
+                </div>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Bookings Panel for Driver -->
+    {% if current_user.id == ride.driver_id %}
+    <div class="col-md-4">
+        <div class="card p-3">
+            <h6 style="color:#1B3A6B;">
+                <i class="bi bi-list-check"></i> Seat Requests
+            </h6>
+            <hr>
+            {% if bookings %}
+                {% for booking in bookings %}
+                <div class="mb-2 p-2 border rounded">
+                    <strong>{{ booking.student.full_name }}</strong><br>
+                    <small class="text-muted">{{ booking.student.phone }}</small><br>
+                    <span class="badge 
+                        {% if booking.status == 'confirmed' %}bg-success
+                        {% elif booking.status == 'pending' %}bg-warning
+                        {% else %}bg-danger{% endif %}">
+                        {{ booking.status }}
+                    </span>
+                    {% if booking.status == 'pending' %}
+                    <div class="mt-1">
+                        <a href="/bookings/{{ booking.id }}/approve" 
+                           class="btn btn-sm btn-success">Accept</a>
+                        <a href="/bookings/{{ booking.id }}/reject" 
+                           class="btn btn-sm btn-danger">Reject</a>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            {% else %}
+                <p class="text-muted">No requests yet.</p>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

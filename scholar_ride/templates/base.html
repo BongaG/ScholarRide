@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scholar-Ride</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f4f8; color: #222; }
+
+        /* NAVBAR */
+        .navbar { background: #1B3A6B; padding: 0.75rem 2rem; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+        .navbar-brand { color: white; font-size: 1.4rem; font-weight: 700; text-decoration: none; letter-spacing: 0.5px; }
+        .navbar-brand span { color: #64B5F6; }
+        .nav-links { display: flex; gap: 1.5rem; list-style: none; align-items: center; }
+        .nav-links a { color: rgba(255,255,255,0.85); text-decoration: none; font-size: 0.9rem; padding: 0.4rem 0.75rem; border-radius: 6px; transition: background 0.2s, color 0.2s; }
+        .nav-links a:hover { background: rgba(255,255,255,0.15); color: white; }
+
+        /* CONTAINER */
+        .container { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem; }
+
+        /* ALERTS */
+        .alert { padding: 0.85rem 1.2rem; border-radius: 8px; margin-bottom: 1rem; font-size: 0.9rem; display: flex; justify-content: space-between; align-items: center; }
+        .alert-danger { background: #fde8e8; color: #c0392b; border-left: 4px solid #c0392b; }
+        .alert-success { background: #e8f5e9; color: #27ae60; border-left: 4px solid #27ae60; }
+        .alert-warning { background: #fff8e1; color: #f39c12; border-left: 4px solid #f39c12; }
+        .alert-info { background: #e3f2fd; color: #1565c0; border-left: 4px solid #1565c0; }
+        .alert-close { background: none; border: none; cursor: pointer; font-size: 1.2rem; color: inherit; opacity: 0.6; }
+        .alert-close:hover { opacity: 1; }
+
+        /* CARDS */
+        .card { background: white; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.07); padding: 2rem; margin-bottom: 1.5rem; }
+
+        /* FORMS */
+        .form-group { margin-bottom: 1.2rem; }
+        .form-group label { display: block; font-size: 0.85rem; font-weight: 600; color: #444; margin-bottom: 0.4rem; }
+        .form-control, .form-select { width: 100%; padding: 0.65rem 0.9rem; border: 1.5px solid #ddd; border-radius: 8px; font-size: 0.95rem; transition: border-color 0.2s; background: white; }
+        .form-control:focus, .form-select:focus { outline: none; border-color: #1B3A6B; box-shadow: 0 0 0 3px rgba(27,58,107,0.1); }
+
+        /* BUTTONS */
+        .btn { display: inline-block; padding: 0.65rem 1.4rem; border-radius: 8px; font-size: 0.9rem; font-weight: 600; cursor: pointer; border: none; text-decoration: none; text-align: center; transition: all 0.2s; }
+        .btn-primary { background: #1B3A6B; color: white; }
+        .btn-primary:hover { background: #2E75B6; }
+        .btn-success { background: #27ae60; color: white; }
+        .btn-success:hover { background: #219a52; }
+        .btn-danger { background: #e74c3c; color: white; }
+        .btn-danger:hover { background: #c0392b; }
+        .btn-warning { background: #f39c12; color: white; }
+        .btn-warning:hover { background: #d68910; }
+        .btn-outline { background: transparent; color: #1B3A6B; border: 2px solid #1B3A6B; }
+        .btn-outline:hover { background: #1B3A6B; color: white; }
+        .btn-sm { padding: 0.35rem 0.8rem; font-size: 0.8rem; }
+        .btn-block { width: 100%; display: block; }
+
+        /* BADGES */
+        .badge { display: inline-block; padding: 0.25rem 0.6rem; border-radius: 20px; font-size: 0.75rem; font-weight: 700; }
+        .badge-success { background: #d4edda; color: #155724; }
+        .badge-danger { background: #f8d7da; color: #721c24; }
+        .badge-warning { background: #fff3cd; color: #856404; }
+        .badge-primary { background: #cce5ff; color: #004085; }
+        .badge-secondary { background: #e2e3e5; color: #383d41; }
+        .badge-info { background: #d1ecf1; color: #0c5460; }
+
+        /* GRID */
+        .row { display: flex; flex-wrap: wrap; gap: 1.5rem; }
+        .col { flex: 1; min-width: 200px; }
+        .col-2 { flex: 2; min-width: 300px; }
+        .col-3 { flex: 3; min-width: 400px; }
+        .col-half { flex: 0 0 calc(50% - 0.75rem); }
+
+        /* TABLE */
+        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+        th { background: #1B3A6B; color: white; padding: 0.75rem 1rem; text-align: left; font-weight: 600; }
+        td { padding: 0.7rem 1rem; border-bottom: 1px solid #f0f0f0; }
+        tr:hover td { background: #f8faff; }
+
+        /* STAT CARDS */
+        .stat-card { background: white; border-radius: 12px; padding: 1.5rem; text-align: center; box-shadow: 0 2px 12px rgba(0,0,0,0.07); }
+        .stat-card .stat-icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
+        .stat-card .stat-number { font-size: 2rem; font-weight: 700; color: #1B3A6B; }
+        .stat-card .stat-label { color: #888; font-size: 0.85rem; }
+
+        /* RIDE CARDS */
+        .ride-card { background: white; border-radius: 12px; padding: 1.25rem 1.5rem; box-shadow: 0 2px 10px rgba(0,0,0,0.06); margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center; }
+        .ride-route { font-size: 1.05rem; font-weight: 700; color: #1B3A6B; }
+        .ride-meta { color: #666; font-size: 0.85rem; margin-top: 0.3rem; }
+
+        /* NOTIFICATION CARDS */
+        .notif-card { background: white; border-radius: 8px; padding: 1rem 1.2rem; margin-bottom: 0.75rem; box-shadow: 0 1px 6px rgba(0,0,0,0.06); border-left: 3px solid transparent; }
+        .notif-card.unread { border-left-color: #1B3A6B; }
+
+        /* ANNOUNCEMENT CARDS */
+        .ann-card { background: white; border-radius: 10px; padding: 1rem 1.2rem; margin-bottom: 1rem; box-shadow: 0 1px 8px rgba(0,0,0,0.06); border-left: 4px solid #1B3A6B; }
+        .ann-card.delay { border-left-color: #f39c12; }
+        .ann-card.breakdown { border-left-color: #e74c3c; }
+        .ann-card.cancellation { border-left-color: #e74c3c; }
+        .ann-card.route_change { border-left-color: #8e44ad; }
+
+        /* UTILITY */
+        .text-center { text-align: center; }
+        .text-muted { color: #888; font-size: 0.85rem; }
+        .mt-1 { margin-top: 0.5rem; }
+        .mt-2 { margin-top: 1rem; }
+        .mt-3 { margin-top: 1.5rem; }
+        .mb-1 { margin-bottom: 0.5rem; }
+        .mb-2 { margin-bottom: 1rem; }
+        .ms-auto { margin-left: auto; }
+        .d-flex { display: flex; }
+        .justify-between { justify-content: space-between; }
+        .align-center { align-items: center; }
+        .gap-1 { gap: 0.5rem; }
+        .w-100 { width: 100%; }
+
+        /* EMPTY STATE */
+        .empty-state { text-align: center; padding: 4rem 2rem; color: #aaa; }
+        .empty-state .empty-icon { font-size: 4rem; margin-bottom: 1rem; }
+
+        /* PAGE HEADER */
+        .page-header { margin-bottom: 1.5rem; }
+        .page-header h4 { color: #1B3A6B; font-size: 1.4rem; font-weight: 700; }
+
+        /* SEARCH BAR */
+        .search-bar { background: white; border-radius: 12px; padding: 1rem 1.5rem; box-shadow: 0 2px 10px rgba(0,0,0,0.06); margin-bottom: 1.5rem; display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: flex-end; }
+        .search-bar .form-group { margin-bottom: 0; flex: 1; min-width: 140px; }
+
+        /* AUTH PAGES */
+        .auth-wrapper { min-height: 80vh; display: flex; align-items: center; justify-content: center; }
+        .auth-card { background: white; border-radius: 16px; padding: 2.5rem; box-shadow: 0 8px 32px rgba(0,0,0,0.1); width: 100%; max-width: 440px; }
+        .auth-card h3 { color: #1B3A6B; font-size: 1.5rem; font-weight: 700; margin-bottom: 1.5rem; text-align: center; }
+        .auth-divider { text-align: center; color: #aaa; font-size: 0.85rem; margin: 1rem 0; }
+        .auth-divider a { color: #1B3A6B; font-weight: 600; }
+
+        /* DRIVER PANEL */
+        .request-item { background: #f8faff; border-radius: 8px; padding: 0.9rem 1rem; margin-bottom: 0.6rem; }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <a class="navbar-brand" href="/rides">Scholar<span>Ride</span></a>
+        <ul class="nav-links">
+            {% if current_user and current_user.is_authenticated %}
+                <li><a href="/rides">🔍 Find Rides</a></li>
+                {% if current_user.role == 'driver' %}
+                <li><a href="/rides/post">➕ Post Ride</a></li>
+                {% endif %}
+                <li><a href="/transport">🚌 Transport</a></li>
+                <li><a href="/notifications">🔔 Notifications</a></li>
+                {% if current_user.role == 'admin' %}
+                <li><a href="/admin">⚙️ Admin</a></li>
+                {% endif %}
+                <li><a href="/logout">← Logout</a></li>
+            {% else %}
+                <li><a href="/login">Login</a></li>
+                <li><a href="/register">Register</a></li>
+            {% endif %}
+        </ul>
+    </nav>
+
+    <div class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">
+                        {{ message }}
+                        <button class="alert-close" onclick="this.parentElement.remove()">×</button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </div>
+</body>
+</html>

@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="auth-wrapper">
+    <div class="auth-card">
+        <h3>✅ Verify Account</h3>
+        <p class="text-center text-muted mb-2">A 6-digit code was shown in the flash message above. Enter it below.</p>
+        <form method="POST" action="/verify-otp">
+            <div class="form-group">
+                <label>OTP Code</label>
+                <input type="text" name="otp" class="form-control text-center" maxlength="6" 
+                       placeholder="000000" style="font-size:1.5rem; letter-spacing:8px; text-align:center;" required>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block mt-2">Verify & Activate</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
