@@ -1,33 +1,27 @@
 from flask import Blueprint, render_template, request, redirect, flash, session
-from scholar_ride import db, bcrypt
+from scholar_ride import db, bcrypt, mail
 from scholar_ride.models import User, Notification
 from flask_login import login_required, current_user
+from flask_mail import Message
+from flask import current_app
 import random
-import urllib.request
-import json
 
 auth = Blueprint('auth', __name__)
 
-SENDGRID_API_KEY = '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'
-SENDER_EMAIL = 'bongagazu10@gmail.com'
 
 def send_email(to_email, subject, body):
-    data = json.dumps({
-        "personalizations": [{"to": [{"email": to_email}]}],
-        "from": {"email": SENDER_EMAIL},
-        "subject": subject,
-        "content": [{"type": "text/plain", "value": body}]
-    }).encode('utf-8')
-
-    req = urllib.request.Request(
-        'https://api.sendgrid.com/v3/mail/send',
-        data=data,
-        headers={
-            'Authorization': f'Bearer {SENDGRID_API_KEY}',
-            'Content-Type': 'application/json'
-        }
-    )
-    urllib.request.urlopen(req)
+    try:
+        msg = Message(
+            subject=subject,
+            sender=current_app.config['MAIL_USERNAME'],
+            recipients=[to_email]
+        )
+        msg.body = body
+        mail.send(msg)
+        return True
+    except Exception as e:
+        print(f'EMAIL ERROR: {e}')
+        return False
 
 
 @auth.route('/')
@@ -103,7 +97,6 @@ def register():
             return redirect('/register')
 
         hashed = bcrypt.generate_password_hash(password).decode('utf-8')
-        otp = str(random.randint(100000, 999999))
 
         user = User(
             full_name=full_name,
@@ -111,8 +104,9 @@ def register():
             phone=phone,
             role=role,
             password_hash=hashed,
-            otp=otp,
+            otp=None,
             verified=False,
+            approval_status='pending',
             student_number=student_number if role == 'student' else driver_number if role == 'driver' else None,
             staff_number=staff_number if role == 'staff' else None,
             department=department if role == 'staff' else None
@@ -120,20 +114,23 @@ def register():
         db.session.add(user)
         db.session.commit()
 
-        session['otp_email'] = email
-
-        try:
-            send_email(
-                email,
-                'Scholar-Ride: Your Verification Code',
-                f'Hi {full_name},\n\nYour verification code is: {otp}\n\nEnter this on the verification page to activate your account.\n\n– Scholar-Ride Team'
+        admins = User.query.filter_by(role='admin', verified=True).all()
+        for admin_user in admins:
+            notif = Notification(
+                user_id=admin_user.id,
+                message=f'🔔 New registration pending approval: {full_name} ({role}) — {email}'
             )
-            flash('A verification code has been sent to your email.', 'success')
-        except Exception as e:
-            print(f'EMAIL ERROR: {e}')
-            flash(f'Account created but email failed. Your OTP is: {otp}', 'warning')
+            db.session.add(notif)
+        db.session.commit()
 
-        return redirect('/verify-otp')
+        send_email(
+            email,
+            'Scholar-Ride: Registration Received',
+            f'Hi {full_name},\n\nThank you for registering on Scholar-Ride.\n\nYour account is pending admin approval. You will receive another email with your verification code once approved.\n\nThis usually takes less than 24 hours.\n\n– Scholar-Ride Team'
+        )
+
+        flash('Registration submitted! Your account is pending admin approval. You will be notified by email once approved.', 'info')
+        return redirect('/login')
 
     return render_template('auth/register.html')
 
@@ -170,16 +167,22 @@ def login():
             flash('Invalid email or password.', 'danger')
             return redirect('/login')
 
+        if user.approval_status == 'pending':
+            flash('Your account is pending admin approval. You will be notified by email once approved.', 'warning')
+            return redirect('/login')
+
+        if user.approval_status == 'rejected':
+            flash('Your registration was not approved. Please contact the administrator.', 'danger')
+            return redirect('/login')
+
         if not user.verified:
-            flash('Please verify your account first.', 'warning')
+            flash('Please verify your account using the OTP sent to your email.', 'warning')
             session['otp_email'] = email
             return redirect('/verify-otp')
 
         login_user(user, remember=True)
 
-        unread = Notification.query.filter_by(
-            user_id=user.id, is_read=False
-        ).count()
+        unread = Notification.query.filter_by(user_id=user.id, is_read=False).count()
         if unread > 0:
             flash(f'You have {unread} unread notification(s). <a href="/notifications">View</a>', 'info')
 
@@ -213,15 +216,15 @@ def forgot_password():
 
         session['reset_email'] = email
 
-        try:
-            send_email(
-                email,
-                'Scholar-Ride: Password Reset Code',
-                f'Hi {user.full_name},\n\nYour password reset code is: {otp}\n\nEnter this code to reset your password.\n\n– Scholar-Ride Team'
-            )
+        sent = send_email(
+            email,
+            'Scholar-Ride: Password Reset Code',
+            f'Hi {user.full_name},\n\nYour password reset code is: {otp}\n\nEnter this code to reset your password.\n\n– Scholar-Ride Team'
+        )
+
+        if sent:
             flash('A reset code has been sent to your email.', 'success')
-        except Exception as e:
-            print(f'EMAIL ERROR: {e}')
+        else:
             flash(f'Email failed. Your reset code is: {otp}', 'warning')
 
         return redirect('/reset-password')

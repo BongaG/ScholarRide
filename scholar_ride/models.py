@@ -17,6 +17,7 @@ class User(db.Model, UserMixin):
     role = db.Column(db.String(20), default='student')
     department = db.Column(db.String(100), nullable=True)
     verified = db.Column(db.Boolean, default=False)
+    approval_status = db.Column(db.String(20), default='pending')
     otp = db.Column(db.String(6), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -69,7 +70,6 @@ class Dispute(db.Model):
 
     reported_by_user = db.relationship('User', foreign_keys=[reported_by])
     reported_against_user = db.relationship('User', foreign_keys=[reported_user])
-
 
 class Review(db.Model):
     id = db.Column(db.Integer, primary_key=True)

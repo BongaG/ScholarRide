@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-between align-center mb-4">
+    <h4 style="color:#1B3A6B; margin:0;">🔔 Pending Registrations</h4>
+    <a href="/admin" class="btn btn-outline btn-sm">← Back to Dashboard</a>
+</div>
+
+{% if pending %}
+    {% for user in pending %}
+    <div class="card p-3 mb-3">
+        <div class="d-flex justify-between align-center">
+            <div>
+                <h5 style="color:#1B3A6B; margin:0;">{{ user.full_name }}</h5>
+                <p class="text-muted mb-1">📧 {{ user.email }}</p>
+                <p class="text-muted mb-1">📱 {{ user.phone }}</p>
+                <p class="text-muted mb-1">
+                    Role: <span class="badge badge-primary">{{ user.role }}</span>
+                    {% if user.role == 'student' %}
+                    | Student No: <strong>{{ user.student_number or 'N/A' }}</strong>
+                    {% elif user.role == 'staff' %}
+                    | Staff No: <strong>{{ user.staff_number or 'N/A' }}</strong>
+                    | Dept: <strong>{{ user.department or 'N/A' }}</strong>
+                    {% elif user.role == 'driver' %}
+                    | ID No: <strong>{{ user.student_number or 'N/A' }}</strong>
+                    {% endif %}
+                </p>
+                <small class="text-muted">Registered: {{ user.created_at.strftime('%d %b %Y at %H:%M') }}</small>
+            </div>
+            <div class="d-flex gap-1" style="flex-direction:column; align-items:flex-end;">
+                <a href="/admin/users/{{ user.id }}/approve"
+                   class="btn btn-success btn-sm"
+                   onclick="return confirm('Approve {{ user.full_name }} and send OTP?')">
+                    ✅ Approve & Send OTP
+                </a>
+                <form method="POST" action="/admin/users/{{ user.id }}/reject" style="display:inline;">
+                    <input type="text" name="reason" class="form-control"
+                           placeholder="Rejection reason..." style="font-size:0.8rem; margin-bottom:4px;">
+                    <button type="submit" class="btn btn-danger btn-sm w-100"
+                            onclick="return confirm('Reject this registration?')">
+                        ❌ Reject
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+{% else %}
+    <div class="empty-state">
+        <div class="empty-icon">✅</div>
+        <p>No pending registrations.</p>
+    </div>
+{% endif %}
+{% endblock %}

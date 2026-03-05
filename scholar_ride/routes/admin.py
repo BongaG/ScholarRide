@@ -1,9 +1,28 @@
 from flask import Blueprint, render_template, request, redirect, flash
 from flask_login import login_required, current_user
-from scholar_ride import db
+from flask_mail import Message
+from flask import current_app
+from scholar_ride import db, mail
 from scholar_ride.models import User, Ride, Booking, Announcement, Notification, Dispute
+import random
 
 admin = Blueprint('admin', __name__)
+
+
+def send_email(to_email, subject, body):
+    try:
+        msg = Message(
+            subject=subject,
+            sender=current_app.config['MAIL_USERNAME'],
+            recipients=[to_email]
+        )
+        msg.body = body
+        mail.send(msg)
+        return True
+    except Exception as e:
+        print(f'EMAIL ERROR: {e}')
+        return False
+
 
 def admin_required(f):
     from functools import wraps
@@ -21,14 +40,14 @@ def admin_required(f):
 @admin_required
 def dashboard():
     users = User.query.order_by(User.created_at.desc()).all()
-    announcements = Announcement.query.order_by(
-        Announcement.created_at.desc()).all()
+    announcements = Announcement.query.order_by(Announcement.created_at.desc()).all()
     all_rides = Ride.query.order_by(Ride.created_at.desc()).all()
     disputes = Dispute.query.order_by(Dispute.created_at.desc()).all()
     total_users = User.query.count()
     active_rides = Ride.query.filter_by(status='active').count()
     total_bookings = Booking.query.count()
     total_announcements = Announcement.query.count()
+    pending_count = User.query.filter_by(approval_status='pending').count()
 
     return render_template('admin/dashboard.html',
                            users=users,
@@ -38,10 +57,72 @@ def dashboard():
                            total_users=total_users,
                            active_rides=active_rides,
                            total_bookings=total_bookings,
-                           total_announcements=total_announcements)
+                           total_announcements=total_announcements,
+                           pending_count=pending_count)
 
 
-# ── USER MANAGEMENT ──────────────────────────────────────────────────────────
+# ── REGISTRATION APPROVAL ─────────────────────────────────────────────────────
+
+@admin.route('/admin/registrations')
+@login_required
+@admin_required
+def pending_registrations():
+    pending = User.query.filter_by(approval_status='pending').order_by(User.created_at.desc()).all()
+    return render_template('admin/registrations.html', pending=pending)
+
+
+@admin.route('/admin/users/<int:user_id>/approve')
+@login_required
+@admin_required
+def approve_user(user_id):
+    user = User.query.get_or_404(user_id)
+    user.approval_status = 'approved'
+
+    otp = str(random.randint(100000, 999999))
+    user.otp = otp
+    db.session.commit()
+
+    notif = Notification(
+        user_id=user.id,
+        message='✅ Your registration has been approved! Check your email for your verification code.'
+    )
+    db.session.add(notif)
+    db.session.commit()
+
+    sent = send_email(
+        user.email,
+        'Scholar-Ride: Your Account Has Been Approved',
+        f'Hi {user.full_name},\n\nGreat news! Your Scholar-Ride registration has been approved.\n\nYour verification code is: {otp}\n\nGo to the verification page and enter this code to activate your account.\n\n– Scholar-Ride Team'
+    )
+
+    if sent:
+        flash(f'{user.full_name} approved — OTP sent to {user.email}.', 'success')
+    else:
+        flash(f'{user.full_name} approved. Email failed — OTP is: {otp}', 'warning')
+
+    return redirect('/admin/registrations')
+
+
+@admin.route('/admin/users/<int:user_id>/reject', methods=['POST'])
+@login_required
+@admin_required
+def reject_user(user_id):
+    user = User.query.get_or_404(user_id)
+    reason = request.form.get('reason', 'Your registration did not meet the requirements.')
+    user.approval_status = 'rejected'
+    db.session.commit()
+
+    send_email(
+        user.email,
+        'Scholar-Ride: Registration Not Approved',
+        f'Hi {user.full_name},\n\nUnfortunately your Scholar-Ride registration was not approved.\n\nReason: {reason}\n\nIf you believe this is an error, please contact the administrator.\n\n– Scholar-Ride Team'
+    )
+
+    flash(f'{user.full_name} registration rejected.', 'info')
+    return redirect('/admin/registrations')
+
+
+# ── USER MANAGEMENT ───────────────────────────────────────────────────────────
 
 @admin.route('/admin/users/<int:user_id>/toggle')
 @login_required
@@ -51,7 +132,7 @@ def toggle_user(user_id):
     user.verified = not user.verified
     db.session.commit()
     flash(f'{user.full_name} has been {"activated" if user.verified else "deactivated"}.', 'success')
-    return redirect('/admin#users')
+    return redirect('/admin')
 
 
 @admin.route('/admin/users/<int:user_id>/role', methods=['POST'])
@@ -63,7 +144,7 @@ def change_role(user_id):
     user.role = new_role
     db.session.commit()
     flash(f'{user.full_name} role changed to {new_role}.', 'success')
-    return redirect('/admin#users')
+    return redirect('/admin')
 
 
 @admin.route('/admin/users/<int:user_id>/delete')
@@ -72,14 +153,12 @@ def change_role(user_id):
 def delete_user(user_id):
     if user_id == current_user.id:
         flash('You cannot delete your own account.', 'danger')
-        return redirect('/admin#users')
+        return redirect('/admin')
     user = User.query.get_or_404(user_id)
 
-    # Delete all related records first
     Notification.query.filter_by(user_id=user_id).delete()
     Booking.query.filter_by(student_id=user_id).delete()
 
-    # Cancel rides posted by this user
     rides = Ride.query.filter_by(driver_id=user_id).all()
     for ride in rides:
         Booking.query.filter_by(ride_id=ride.id).delete()
@@ -87,8 +166,8 @@ def delete_user(user_id):
 
     db.session.delete(user)
     db.session.commit()
-    flash(f'User deleted successfully.', 'success')
-    return redirect('/admin#users')
+    flash('User deleted successfully.', 'success')
+    return redirect('/admin')
 
 
 # ── RIDE MANAGEMENT ───────────────────────────────────────────────────────────
@@ -100,16 +179,17 @@ def cancel_ride(ride_id):
     ride = Ride.query.get_or_404(ride_id)
     ride.status = 'cancelled'
 
-    # Notify all confirmed riders
     bookings = Booking.query.filter_by(ride_id=ride_id, status='confirmed').all()
     for booking in bookings:
-        msg = f'Admin has cancelled the ride from {ride.origin} to {ride.destination}.'
-        notif = Notification(user_id=booking.student_id, message=msg)
+        notif = Notification(
+            user_id=booking.student_id,
+            message=f'Admin has cancelled the ride from {ride.origin} to {ride.destination}.'
+        )
         db.session.add(notif)
 
     db.session.commit()
     flash('Ride cancelled and all riders notified.', 'success')
-    return redirect('/admin#rides')
+    return redirect('/admin')
 
 
 @admin.route('/admin/rides/<int:ride_id>/delete')
@@ -118,18 +198,19 @@ def cancel_ride(ride_id):
 def delete_ride(ride_id):
     ride = Ride.query.get_or_404(ride_id)
 
-    # Notify all confirmed riders
     bookings = Booking.query.filter_by(ride_id=ride_id, status='confirmed').all()
     for booking in bookings:
-        msg = f'A ride from {ride.origin} to {ride.destination} has been removed by admin.'
-        notif = Notification(user_id=booking.student_id, message=msg)
+        notif = Notification(
+            user_id=booking.student_id,
+            message=f'A ride from {ride.origin} to {ride.destination} has been removed by admin.'
+        )
         db.session.add(notif)
 
     Booking.query.filter_by(ride_id=ride_id).delete()
     db.session.delete(ride)
     db.session.commit()
     flash('Ride deleted successfully.', 'success')
-    return redirect('/admin#rides')
+    return redirect('/admin')
 
 
 # ── ANNOUNCEMENTS ─────────────────────────────────────────────────────────────
@@ -150,7 +231,6 @@ def post_announcement():
     )
     db.session.add(ann)
 
-    # Notify all verified users
     all_users = User.query.filter_by(verified=True).all()
     for user in all_users:
         notif = Notification(
@@ -161,7 +241,7 @@ def post_announcement():
 
     db.session.commit()
     flash('Announcement posted and all users notified.', 'success')
-    return redirect('/admin#announcements')
+    return redirect('/admin')
 
 
 @admin.route('/admin/announcements/<int:ann_id>/delete')
@@ -172,7 +252,7 @@ def delete_announcement(ann_id):
     db.session.delete(ann)
     db.session.commit()
     flash('Announcement deleted.', 'success')
-    return redirect('/admin#announcements')
+    return redirect('/admin')
 
 
 # ── DISPUTES ──────────────────────────────────────────────────────────────────
@@ -185,23 +265,21 @@ def resolve_dispute(dispute_id):
     action = request.form.get('action')
     dispute.status = 'resolved'
 
+    user = User.query.get(dispute.reported_user)
+
     if action == 'warn':
-        user = User.query.get(dispute.reported_user)
-        msg = f'You have received a warning from admin regarding a dispute.'
-        notif = Notification(user_id=user.id, message=msg)
+        notif = Notification(user_id=user.id, message='⚠️ You have received a warning from admin regarding a dispute.')
         db.session.add(notif)
         flash(f'Warning sent to {user.full_name}.', 'success')
 
     elif action == 'ban':
-        user = User.query.get(dispute.reported_user)
         user.verified = False
-        msg = f'Your account has been suspended due to a dispute resolution.'
-        notif = Notification(user_id=user.id, message=msg)
+        notif = Notification(user_id=user.id, message='🚫 Your account has been suspended due to a dispute resolution.')
         db.session.add(notif)
         flash(f'{user.full_name} has been banned.', 'success')
 
     db.session.commit()
-    return redirect('/admin#disputes')
+    return redirect('/admin')
 
 
 @admin.route('/admin/disputes/<int:dispute_id>/delete')
@@ -212,7 +290,7 @@ def delete_dispute(dispute_id):
     db.session.delete(dispute)
     db.session.commit()
     flash('Dispute deleted.', 'success')
-    return redirect('/admin#disputes')
+    return redirect('/admin')
 
 
 # ── TRANSPORT FEED ────────────────────────────────────────────────────────────
@@ -220,16 +298,17 @@ def delete_dispute(dispute_id):
 @admin.route('/transport')
 @login_required
 def transport_feed():
-    announcements = Announcement.query.order_by(
-        Announcement.created_at.desc()).all()
+    announcements = Announcement.query.order_by(Announcement.created_at.desc()).all()
     return render_template('transport/feed.html', announcements=announcements)
 
+
+# ── ANALYTICS ─────────────────────────────────────────────────────────────────
 
 @admin.route('/admin/analytics')
 @login_required
 @admin_required
 def analytics():
-    from scholar_ride.models import Review, Dispute
+    from scholar_ride.models import Review
     from sqlalchemy import func
 
     total_users = User.query.count()
@@ -240,20 +319,19 @@ def analytics():
 
     student_count = User.query.filter_by(role='student').count()
     driver_count = User.query.filter_by(role='driver').count()
+    staff_count = User.query.filter_by(role='staff').count()
     verified_count = User.query.filter_by(verified=True).count()
+    pending_count = User.query.filter_by(approval_status='pending').count()
 
     active_rides = Ride.query.filter_by(status='active').count()
     completed_rides = Ride.query.filter_by(status='completed').count()
     cancelled_rides = Ride.query.filter_by(status='cancelled').count()
-    breakdown_rides = Ride.query.filter(
-        Ride.status.in_(['breakdown', 'delayed'])
-    ).count()
+    breakdown_rides = Ride.query.filter(Ride.status.in_(['breakdown', 'delayed'])).count()
 
     confirmed_bookings = Booking.query.filter_by(status='confirmed').count()
     pending_bookings = Booking.query.filter_by(status='pending').count()
     cancelled_bookings = Booking.query.filter_by(status='cancelled').count()
 
-    # Top drivers by average rating
     top_drivers_raw = db.session.query(
         User,
         func.avg(Review.rating).label('avg_rating'),
@@ -270,7 +348,6 @@ def analytics():
         driver.ride_count = ride_count
         top_drivers.append(driver)
 
-    # Popular routes
     popular_routes = db.session.query(
         Ride.origin,
         Ride.destination,
@@ -289,7 +366,9 @@ def analytics():
         total_disputes=total_disputes,
         student_count=student_count,
         driver_count=driver_count,
+        staff_count=staff_count,
         verified_count=verified_count,
+        pending_count=pending_count,
         active_rides=active_rides,
         completed_rides=completed_rides,
         cancelled_rides=cancelled_rides,
@@ -303,12 +382,14 @@ def analytics():
     )
 
 
+# ── DATABASE VIEWER ───────────────────────────────────────────────────────────
+
 @admin.route('/admin/database')
 @login_required
 @admin_required
 def database_viewer():
-    from scholar_ride.models import Review, Dispute, Announcement
-    
+    from scholar_ride.models import Review
+
     users = User.query.order_by(User.created_at.desc()).all()
     rides = Ride.query.order_by(Ride.created_at.desc()).all()
     bookings = Booking.query.order_by(Booking.booking_date.desc()).all()
