@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-header">
+    <h4>🗄️ Database Viewer</h4>
+</div>
+
+<!-- USERS -->
+<div class="card p-3 mb-4">
+    <h6 style="color:#1B3A6B;" class="mb-3">👥 Users ({{ users|length }})</h6>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Role</th>
+                <th>Verified</th>
+                <th>Joined</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for u in users %}
+            <tr>
+                <td>{{ u.id }}</td>
+                <td>{{ u.full_name }}</td>
+                <td>{{ u.email }}</td>
+                <td>{{ u.phone }}</td>
+                <td><span class="badge badge-primary">{{ u.role }}</span></td>
+                <td>{% if u.verified %}✅{% else %}❌{% endif %}</td>
+                <td>{{ u.created_at.strftime('%d %b %Y') }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- RIDES -->
+<div class="card p-3 mb-4">
+    <h6 style="color:#1B3A6B;" class="mb-3">🚗 Rides ({{ rides|length }})</h6>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Driver</th>
+                <th>From</th>
+                <th>To</th>
+                <th>Departure</th>
+                <th>Seats</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in rides %}
+            <tr>
+                <td>{{ r.id }}</td>
+                <td>{{ r.driver.full_name }}</td>
+                <td>{{ r.origin }}</td>
+                <td>{{ r.destination }}</td>
+                <td>{{ r.departure_time.strftime('%d %b %Y %H:%M') }}</td>
+                <td>{{ r.available_seats }}/{{ r.total_seats }}</td>
+                <td><span class="badge 
+                    {% if r.status == 'active' %}badge-success
+                    {% elif r.status == 'completed' %}badge-primary
+                    {% elif r.status == 'cancelled' %}badge-danger
+                    {% else %}badge-warning{% endif %}">
+                    {{ r.status }}
+                </span></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- BOOKINGS -->
+<div class="card p-3 mb-4">
+    <h6 style="color:#1B3A6B;" class="mb-3">🎫 Bookings ({{ bookings|length }})</h6>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Student</th>
+                <th>Ride</th>
+                <th>Status</th>
+                <th>Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for b in bookings %}
+            <tr>
+                <td>{{ b.id }}</td>
+                <td>{{ b.student.full_name }}</td>
+                <td>{{ b.ride.origin }} → {{ b.ride.destination }}</td>
+                <td><span class="badge 
+                    {% if b.status == 'confirmed' %}badge-success
+                    {% elif b.status == 'pending' %}badge-warning
+                    {% else %}badge-danger{% endif %}">
+                    {{ b.status }}
+                </span></td>
+                <td>{{ b.booking_date.strftime('%d %b %Y') }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- REVIEWS -->
+<div class="card p-3 mb-4">
+    <h6 style="color:#1B3A6B;" class="mb-3">⭐ Reviews ({{ reviews|length }})</h6>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Reviewer</th>
+                <th>Driver</th>
+                <th>Rating</th>
+                <th>Comment</th>
+                <th>Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for rv in reviews %}
+            <tr>
+                <td>{{ rv.id }}</td>
+                <td>{{ rv.reviewer.full_name }}</td>
+                <td>{{ rv.driver.full_name }}</td>
+                <td>{% for i in range(rv.rating) %}⭐{% endfor %}</td>
+                <td>{{ rv.comment or '—' }}</td>
+                <td>{{ rv.created_at.strftime('%d %b %Y') }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- DISPUTES -->
+<div class="card p-3 mb-4">
+    <h6 style="color:#1B3A6B;" class="mb-3">⚠️ Disputes ({{ disputes|length }})</h6>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Reported By</th>
+                <th>Against</th>
+                <th>Description</th>
+                <th>Status</th>
+                <th>Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for d in disputes %}
+            <tr>
+                <td>{{ d.id }}</td>
+                <td>{{ d.reporter.full_name }}</td>
+                <td>{{ d.accused.full_name }}</td>
+                <td>{{ d.description[:50] }}...</td>
+                <td><span class="badge badge-warning">{{ d.status }}</span></td>
+                <td>{{ d.created_at.strftime('%d %b %Y') }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- ANNOUNCEMENTS -->
+<div class="card p-3 mb-4">
+    <h6 style="color:#1B3A6B;" class="mb-3">📢 Announcements ({{ announcements|length }})</h6>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Title</th>
+                <th>Category</th>
+                <th>Body</th>
+                <th>Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for a in announcements %}
+            <tr>
+                <td>{{ a.id }}</td>
+                <td>{{ a.title }}</td>
+                <td><span class="badge badge-info">{{ a.category }}</span></td>
+                <td>{{ a.body[:50] }}...</td>
+                <td>{{ a.created_at.strftime('%d %b %Y') }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

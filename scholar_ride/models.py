@@ -79,3 +79,6 @@ class Review(db.Model):
     rating = db.Column(db.Integer, nullable=False)
     comment = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    reviewer = db.relationship('User', foreign_keys=[reviewer_id])
+    driver = db.relationship('User', foreign_keys=[driver_id])

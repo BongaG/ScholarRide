@@ -22,6 +22,17 @@ def create_app():
     login_manager.login_view = 'auth.login'
     login_manager.login_message_category = 'info'
 
+    @app.context_processor
+    def inject_unread_count():
+        from flask_login import current_user
+        from .models import Notification
+        if current_user.is_authenticated:
+            unread = Notification.query.filter_by(
+                user_id=current_user.id, is_read=False
+            ).count()
+            return dict(unread_count=unread)
+        return dict(unread_count=0)
+
     from .routes.auth import auth
     from .routes.rides import rides
     from .routes.bookings import bookings

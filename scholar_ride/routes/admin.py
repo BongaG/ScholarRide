@@ -301,3 +301,26 @@ def analytics():
         popular_routes=popular_routes,
         recent_users=recent_users
     )
+
+
+@admin.route('/admin/database')
+@login_required
+@admin_required
+def database_viewer():
+    from scholar_ride.models import Review, Dispute, Announcement
+    
+    users = User.query.order_by(User.created_at.desc()).all()
+    rides = Ride.query.order_by(Ride.created_at.desc()).all()
+    bookings = Booking.query.order_by(Booking.booking_date.desc()).all()
+    reviews = Review.query.order_by(Review.created_at.desc()).all()
+    disputes = Dispute.query.order_by(Dispute.created_at.desc()).all()
+    announcements = Announcement.query.order_by(Announcement.created_at.desc()).all()
+
+    return render_template('admin/database.html',
+        users=users,
+        rides=rides,
+        bookings=bookings,
+        reviews=reviews,
+        disputes=disputes,
+        announcements=announcements
+    )
