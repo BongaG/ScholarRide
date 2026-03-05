@@ -15,6 +15,7 @@ class User(db.Model, UserMixin):
     phone = db.Column(db.String(20), nullable=False)
     password_hash = db.Column(db.String(128), nullable=False)
     role = db.Column(db.String(20), default='student')
+    department = db.Column(db.String(100), nullable=True)
     verified = db.Column(db.Boolean, default=False)
     otp = db.Column(db.String(6), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -64,4 +65,17 @@ class Dispute(db.Model):
     ride_id = db.Column(db.Integer, db.ForeignKey('ride.id'), nullable=True)
     description = db.Column(db.Text, nullable=False)
     status = db.Column(db.String(20), default='open')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    reported_by_user = db.relationship('User', foreign_keys=[reported_by])
+    reported_against_user = db.relationship('User', foreign_keys=[reported_user])
+
+
+class Review(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    ride_id = db.Column(db.Integer, db.ForeignKey('ride.id'), nullable=False)
+    reviewer_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    driver_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    rating = db.Column(db.Integer, nullable=False)
+    comment = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)

@@ -3,8 +3,10 @@ from flask_login import login_required, current_user
 from scholar_ride import db
 from scholar_ride.models import Ride, Booking
 from datetime import datetime
+from scholar_ride.models import Ride, Booking, Notification, User
 
 rides = Blueprint('rides', __name__)
+
 
 @rides.route('/')
 @rides.route('/rides')
@@ -36,8 +38,8 @@ def index():
 @rides.route('/rides/post', methods=['GET', 'POST'])
 @login_required
 def post_ride():
-    if current_user.role != 'driver':
-        flash('Only drivers can post rides.', 'danger')
+    if current_user.role not in ['driver', 'staff']:
+        flash('Only drivers and staff can post rides.', 'danger')
         return redirect('/rides')
 
     if request.method == 'POST':
@@ -68,6 +70,15 @@ def post_ride():
     return render_template('rides/post.html')
 
 
+@rides.route('/rides/my')
+@login_required
+def my_rides():
+    all_rides = Ride.query.filter_by(
+        driver_id=current_user.id
+    ).order_by(Ride.departure_time.desc()).all()
+    return render_template('rides/my_rides.html', rides=all_rides)
+
+
 @rides.route('/rides/<int:ride_id>')
 @login_required
 def ride_detail(ride_id):
@@ -76,7 +87,7 @@ def ride_detail(ride_id):
 
     already_booked = False
     booking_status = None
-    if current_user.role == 'student':
+    if current_user.role in ['student', 'staff']:
         existing = Booking.query.filter_by(
             ride_id=ride_id, student_id=current_user.id
         ).first()
@@ -104,7 +115,6 @@ def update_ride(ride_id):
     ride.status = new_status
     db.session.commit()
 
-    # Notify all confirmed riders
     if new_status in ['cancelled', 'delayed', 'breakdown']:
         from scholar_ride.models import Notification
         bookings = Booking.query.filter_by(
@@ -118,3 +128,84 @@ def update_ride(ride_id):
 
     flash(f'Ride status updated to {new_status}.', 'success')
     return redirect(f'/rides/{ride_id}')
+
+
+@rides.route('/disputes/submit', methods=['POST'])
+@login_required
+def submit_dispute():
+    from scholar_ride.models import Dispute
+    reported_user_id = request.form.get('reported_user_id')
+    ride_id = request.form.get('ride_id')
+    description = request.form.get('description')
+
+    dispute = Dispute(
+        reported_by=current_user.id,
+        reported_user=reported_user_id,
+        ride_id=ride_id,
+        description=description
+    )
+    db.session.add(dispute)
+    db.session.commit()
+    flash('Dispute submitted. Admin will review it shortly.', 'success')
+    return redirect(f'/rides/{ride_id}')
+
+@rides.route('/rides/<int:ride_id>/review', methods=['GET', 'POST'])
+@login_required
+def leave_review(ride_id):
+    from scholar_ride.models import Review
+    ride = Ride.query.get_or_404(ride_id)
+
+    booking = Booking.query.filter_by(
+        ride_id=ride_id,
+        student_id=current_user.id,
+        status='confirmed'
+    ).first()
+
+    if not booking:
+        flash('You can only review rides you were confirmed on.', 'danger')
+        return redirect('/bookings/my')
+
+    existing = Review.query.filter_by(
+        ride_id=ride_id,
+        reviewer_id=current_user.id
+    ).first()
+    if existing:
+        flash('You have already reviewed this ride.', 'warning')
+        return redirect('/bookings/my')
+
+    driver = User.query.get(ride.driver_id)
+
+    if request.method == 'POST':
+        rating = int(request.form.get('rating'))
+        comment = request.form.get('comment')
+
+        review = Review(
+            ride_id=ride_id,
+            reviewer_id=current_user.id,
+            driver_id=ride.driver_id,
+            rating=rating,
+            comment=comment
+        )
+        db.session.add(review)
+
+        notif = Notification(
+            user_id=ride.driver_id,
+            message=f'{current_user.full_name} left you a {rating}⭐ review.'
+        )
+        db.session.add(notif)
+        db.session.commit()
+
+        flash('Review submitted! Thank you.', 'success')
+        return redirect('/bookings/my')
+
+    return render_template('rides/review.html', ride=ride, driver=driver)
+
+
+@rides.route('/driver/<int:driver_id>/reviews')
+@login_required
+def driver_reviews(driver_id):
+    from scholar_ride.models import Review
+    driver = User.query.get_or_404(driver_id)
+    reviews = Review.query.filter_by(driver_id=driver_id).order_by(Review.created_at.desc()).all()
+    avg_rating = round(sum(r.rating for r in reviews) / len(reviews), 1) if reviews else 0
+    return render_template('rides/driver_reviews.html', driver=driver, reviews=reviews, avg_rating=avg_rating)

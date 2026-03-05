@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block content %}
+
+<!-- Hero -->
+<div class="sr-hero rounded mb-5">
+  <div class="row align-items-center">
+    <div class="col-lg-7">
+      <div class="sr-badge mb-3">
+        ✅ Exclusively for DUT Community
+      </div>
+      <h1 class="sr-hero-title">
+        Campus Rides,<br>
+        <span class="sr-highlight">Simplified.</span>
+      </h1>
+      <p class="sr-hero-sub">
+        Scholar-Ride connects verified Durban University of Technology students and staff
+        for safe, affordable, and convenient campus carpooling.
+      </p>
+      <div class="sr-hero-btns">
+        <a href="/register" class="btn btn-warning btn-lg">🚀 Get Started</a>
+        <a href="/login" class="btn btn-outline btn-lg">🔐 Sign In</a>
+      </div>
+    </div>
+    <div class="col-lg-5 sr-hero-icon">🚗</div>
+  </div>
+</div>
+
+<!-- Features -->
+<div class="row mb-5">
+  <div class="col">
+    <div class="sr-feature-card card text-center">
+      <div class="sr-feature-icon">🔒</div>
+      <h5>Verified Community Only</h5>
+      <p class="text-muted">Only verified DUT students and staff with valid DUT numbers and email addresses can join. OTP verification ensures accountability.</p>
+    </div>
+  </div>
+  <div class="col">
+    <div class="sr-feature-card card text-center">
+      <div class="sr-feature-icon">🚗</div>
+      <h5>Smart Ride Matching</h5>
+      <p class="text-muted">Search rides by origin, destination, and date. Drivers post available seats; students request and get confirmed instantly.</p>
+    </div>
+  </div>
+  <div class="col">
+    <div class="sr-feature-card card text-center">
+      <div class="sr-feature-icon">📡</div>
+      <h5>Live Transport Feed</h5>
+      <p class="text-muted">Real-time campus bus and shuttle updates — delays, breakdowns, and cancellations posted by admin, visible on your dashboard.</p>
+    </div>
+  </div>
+</div>
+
+<!-- How It Works -->
+<div class="card sr-how mb-5">
+  <h3 class="text-center mb-4">How Scholar-Ride Works</h3>
+  <div class="row">
+    <div class="col text-center">
+      <div class="sr-step-num" style="background:#1B3A6B;">1</div>
+      <h6>Register</h6>
+      <p class="text-muted">Sign up with your DUT number and institutional email. Verify via OTP.</p>
+    </div>
+    <div class="col text-center">
+      <div class="sr-step-num" style="background:#27ae60;">2</div>
+      <h6>Find or Post</h6>
+      <p class="text-muted">Drivers post rides with route, time, and seats. Students browse and request.</p>
+    </div>
+    <div class="col text-center">
+      <div class="sr-step-num" style="background:#f39c12;">3</div>
+      <h6>Get Confirmed</h6>
+      <p class="text-muted">Driver approves your request. You receive an instant notification.</p>
+    </div>
+    <div class="col text-center">
+      <div class="sr-step-num" style="background:#8e44ad;">4</div>
+      <h6>Ride & Review</h6>
+      <p class="text-muted">Travel safely with your DUT community. Leave a review after the ride.</p>
+    </div>
+  </div>
+</div>
+
+<!-- CTA -->
+<div class="text-center py-4">
+  <h4 class="mb-3">Ready to ride smarter at DUT?</h4>
+  <a href="/register" class="btn btn-primary btn-lg">👤 Create Your Account</a>
+  <p class="text-muted mt-3">Already have an account? <a href="/login">Sign in here</a></p>
+</div>
+
+{% endblock %}

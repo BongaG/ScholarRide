@@ -1,0 +1,303 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;600&display=swap');
+
+    .review-wrapper {
+        min-height: 80vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem 1rem;
+    }
+
+    .review-card {
+        background: white;
+        border-radius: 24px;
+        padding: 0;
+        max-width: 480px;
+        width: 100%;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.12);
+        overflow: hidden;
+    }
+
+    .review-header {
+        background: linear-gradient(135deg, #1B3A6B 0%, #2E75B6 100%);
+        padding: 2.5rem 2rem;
+        text-align: center;
+        color: white;
+        position: relative;
+    }
+
+    .review-header::after {
+        content: '';
+        position: absolute;
+        bottom: -1px;
+        left: 0;
+        right: 0;
+        height: 30px;
+        background: white;
+        border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+    }
+
+    .driver-avatar {
+        width: 72px;
+        height: 72px;
+        background: rgba(255,255,255,0.2);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        margin: 0 auto 1rem;
+        border: 3px solid rgba(255,255,255,0.4);
+    }
+
+    .review-header h3 {
+        font-family: 'DM Serif Display', serif;
+        font-size: 1.5rem;
+        margin-bottom: 0.25rem;
+    }
+
+    .review-header .route-label {
+        font-size: 0.85rem;
+        opacity: 0.8;
+        background: rgba(255,255,255,0.15);
+        padding: 0.3rem 0.9rem;
+        border-radius: 20px;
+        display: inline-block;
+        margin-top: 0.5rem;
+    }
+
+    .review-body {
+        padding: 2rem;
+        font-family: 'DM Sans', sans-serif;
+    }
+
+    /* STAR RATING */
+    .star-rating-wrapper {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    .star-rating-wrapper label.section-label {
+        display: block;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #999;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        margin-bottom: 1rem;
+    }
+
+    .star-group {
+        display: flex;
+        flex-direction: row-reverse;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+    .star-group input { display: none; }
+
+    .star-group label {
+        font-size: 3rem;
+        color: #e0e0e0;
+        cursor: pointer;
+        transition: color 0.15s, transform 0.15s;
+        line-height: 1;
+    }
+
+    .star-group label:hover,
+    .star-group label:hover ~ label,
+    .star-group input:checked ~ label {
+        color: #f39c12;
+    }
+
+    .star-group label:hover {
+        transform: scale(1.2);
+    }
+
+    .rating-text {
+        margin-top: 0.75rem;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #1B3A6B;
+        min-height: 1.2rem;
+        transition: opacity 0.2s;
+    }
+
+    /* COMMENT */
+    .comment-wrapper { margin-bottom: 1.5rem; }
+
+    .comment-wrapper label {
+        display: block;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #999;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        margin-bottom: 0.6rem;
+    }
+
+    .comment-wrapper textarea {
+        width: 100%;
+        border: 2px solid #eee;
+        border-radius: 12px;
+        padding: 0.9rem 1rem;
+        font-family: 'DM Sans', sans-serif;
+        font-size: 0.95rem;
+        resize: none;
+        transition: border-color 0.2s;
+        outline: none;
+    }
+
+    .comment-wrapper textarea:focus {
+        border-color: #1B3A6B;
+    }
+
+    /* SUBMIT BUTTON */
+    .submit-btn {
+        width: 100%;
+        padding: 1rem;
+        background: linear-gradient(135deg, #1B3A6B, #2E75B6);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        font-size: 1rem;
+        font-weight: 600;
+        font-family: 'DM Sans', sans-serif;
+        cursor: pointer;
+        transition: transform 0.2s, box-shadow 0.2s;
+        letter-spacing: 0.5px;
+    }
+
+    .submit-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(27,58,107,0.3);
+    }
+
+    .back-link {
+        display: block;
+        text-align: center;
+        margin-top: 1.2rem;
+        color: #aaa;
+        font-size: 0.85rem;
+        text-decoration: none;
+        font-family: 'DM Sans', sans-serif;
+    }
+
+    .back-link:hover { color: #1B3A6B; }
+
+    /* QUICK TAGS */
+    .quick-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .quick-tag {
+        background: #f0f4ff;
+        color: #1B3A6B;
+        border: 1.5px solid #d0dcff;
+        border-radius: 20px;
+        padding: 0.3rem 0.8rem;
+        font-size: 0.8rem;
+        cursor: pointer;
+        transition: all 0.15s;
+        font-family: 'DM Sans', sans-serif;
+    }
+
+    .quick-tag:hover, .quick-tag.active {
+        background: #1B3A6B;
+        color: white;
+        border-color: #1B3A6B;
+    }
+</style>
+
+<div class="review-wrapper">
+    <div class="review-card">
+        <div class="review-header">
+            <div class="driver-avatar">🧑‍✈️</div>
+            <h3>{{ driver.full_name }}</h3>
+            <p style="opacity:0.8; margin:0; font-size:0.9rem;">How was your experience?</p>
+            <span class="route-label">📍 {{ ride.origin }} → {{ ride.destination }}</span>
+        </div>
+
+        <div class="review-body">
+            <form method="POST" action="/rides/{{ ride.id }}/review" id="reviewForm">
+
+                <!-- Stars -->
+                <div class="star-rating-wrapper">
+                    <label class="section-label">Your Rating</label>
+                    <div class="star-group">
+                        <input type="radio" name="rating" value="5" id="s5" required>
+                        <label for="s5">★</label>
+                        <input type="radio" name="rating" value="4" id="s4">
+                        <label for="s4">★</label>
+                        <input type="radio" name="rating" value="3" id="s3">
+                        <label for="s3">★</label>
+                        <input type="radio" name="rating" value="2" id="s2">
+                        <label for="s2">★</label>
+                        <input type="radio" name="rating" value="1" id="s1">
+                        <label for="s1">★</label>
+                    </div>
+                    <div class="rating-text" id="ratingText"></div>
+                </div>
+
+                <!-- Quick Tags -->
+                <div class="comment-wrapper">
+                    <label>Quick Tags</label>
+                    <div class="quick-tags">
+                        <span class="quick-tag" onclick="addTag(this, 'On time')">⏰ On time</span>
+                        <span class="quick-tag" onclick="addTag(this, 'Safe driver')">🛡️ Safe driver</span>
+                        <span class="quick-tag" onclick="addTag(this, 'Friendly')">😊 Friendly</span>
+                        <span class="quick-tag" onclick="addTag(this, 'Clean car')">✨ Clean car</span>
+                        <span class="quick-tag" onclick="addTag(this, 'Great music')">🎵 Great music</span>
+                        <span class="quick-tag" onclick="addTag(this, 'Would ride again')">🔄 Would ride again</span>
+                    </div>
+                </div>
+
+                <!-- Comment -->
+                <div class="comment-wrapper">
+                    <label>Comment <span style="font-weight:400; text-transform:none; letter-spacing:0;">(optional)</span></label>
+                    <textarea name="comment" id="commentBox" rows="3" 
+                              placeholder="Tell others about your experience..."></textarea>
+                </div>
+
+                <button type="submit" class="submit-btn">
+                    Submit Review ✓
+                </button>
+            </form>
+
+            <a href="/bookings/my" class="back-link">← Back to My Bookings</a>
+        </div>
+    </div>
+</div>
+
+<script>
+    const ratingLabels = {
+        1: '😞 Poor experience',
+        2: '😐 Below average',
+        3: '🙂 Decent ride',
+        4: '😊 Great ride!',
+        5: '🤩 Exceptional!'
+    };
+
+    document.querySelectorAll('.star-group input').forEach(input => {
+        input.addEventListener('change', () => {
+            document.getElementById('ratingText').textContent = ratingLabels[input.value];
+        });
+    });
+
+    function addTag(el, text) {
+        el.classList.toggle('active');
+        const box = document.getElementById('commentBox');
+        if (el.classList.contains('active')) {
+            box.value = box.value ? box.value + ', ' + text : text;
+        } else {
+            box.value = box.value.replace(', ' + text, '').replace(text + ', ', '').replace(text, '');
+        }
+    }
+</script>
+{% endblock %}

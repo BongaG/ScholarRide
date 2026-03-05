@@ -110,4 +110,21 @@
     </div>
     {% endif %}
 </div>
+<!-- Dispute Form -->
+{% if current_user.id != ride.driver_id %}
+<div class="card p-3 mt-3">
+    <h6 style="color:#dc3545;">
+        <i class="bi bi-flag"></i> Report an Issue
+    </h6>
+    <form method="POST" action="/disputes/submit">
+        <input type="hidden" name="ride_id" value="{{ ride.id }}">
+        <input type="hidden" name="reported_user_id" value="{{ ride.driver_id }}">
+        <div class="mb-2">
+            <textarea name="description" class="form-control" rows="2"
+                      placeholder="Describe the issue..." required></textarea>
+        </div>
+        <button type="submit" class="btn btn-sm btn-danger">Submit Report</button>
+    </form>
+</div>
+{% endif %}
 {% endblock %}

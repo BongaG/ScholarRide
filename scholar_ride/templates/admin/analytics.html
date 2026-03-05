@@ -1,0 +1,224 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-header">
+    <h4>📊 Analytics Dashboard</h4>
+</div>
+
+<!-- Stats Overview -->
+<div class="row mb-4">
+    <div class="col">
+        <div class="stat-card">
+            <div class="stat-icon">👥</div>
+            <div class="stat-number">{{ total_users }}</div>
+            <div class="stat-label">Total Users</div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="stat-card">
+            <div class="stat-icon">🚗</div>
+            <div class="stat-number">{{ total_rides }}</div>
+            <div class="stat-label">Total Rides</div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="stat-card">
+            <div class="stat-icon">🎫</div>
+            <div class="stat-number">{{ total_bookings }}</div>
+            <div class="stat-label">Total Bookings</div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="stat-card">
+            <div class="stat-icon">⭐</div>
+            <div class="stat-number">{{ total_reviews }}</div>
+            <div class="stat-label">Total Reviews</div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="stat-card">
+            <div class="stat-icon">⚠️</div>
+            <div class="stat-number">{{ total_disputes }}</div>
+            <div class="stat-label">Total Disputes</div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <!-- User Breakdown -->
+    <div class="col">
+        <div class="card p-3">
+            <h6 style="color:#1B3A6B;" class="mb-3">👥 User Breakdown</h6>
+            <div class="mb-2">
+                <div class="d-flex justify-between mb-1">
+                    <span>Students</span>
+                    <strong>{{ student_count }}</strong>
+                </div>
+                <div class="sr-bar">
+                    <div class="sr-bar-fill" style="width:{{ (student_count / total_users * 100) if total_users > 0 else 0 }}%; background:#1B3A6B;"></div>
+                </div>
+            </div>
+            <div class="mb-2">
+                <div class="d-flex justify-between mb-1">
+                    <span>Drivers</span>
+                    <strong>{{ driver_count }}</strong>
+                </div>
+                <div class="sr-bar">
+                    <div class="sr-bar-fill" style="width:{{ (driver_count / total_users * 100) if total_users > 0 else 0 }}%; background:#27ae60;"></div>
+                </div>
+            </div>
+            <div class="mb-2">
+                <div class="d-flex justify-between mb-1">
+                    <span>Verified Users</span>
+                    <strong>{{ verified_count }}</strong>
+                </div>
+                <div class="sr-bar">
+                    <div class="sr-bar-fill" style="width:{{ (verified_count / total_users * 100) if total_users > 0 else 0 }}%; background:#f39c12;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ride Breakdown -->
+    <div class="col">
+        <div class="card p-3">
+            <h6 style="color:#1B3A6B;" class="mb-3">🚗 Ride Status Breakdown</h6>
+            <div class="mb-2">
+                <div class="d-flex justify-between mb-1">
+                    <span>Active</span>
+                    <strong>{{ active_rides }}</strong>
+                </div>
+                <div class="sr-bar">
+                    <div class="sr-bar-fill" style="width:{{ (active_rides / total_rides * 100) if total_rides > 0 else 0 }}%; background:#27ae60;"></div>
+                </div>
+            </div>
+            <div class="mb-2">
+                <div class="d-flex justify-between mb-1">
+                    <span>Completed</span>
+                    <strong>{{ completed_rides }}</strong>
+                </div>
+                <div class="sr-bar">
+                    <div class="sr-bar-fill" style="width:{{ (completed_rides / total_rides * 100) if total_rides > 0 else 0 }}%; background:#1B3A6B;"></div>
+                </div>
+            </div>
+            <div class="mb-2">
+                <div class="d-flex justify-between mb-1">
+                    <span>Cancelled</span>
+                    <strong>{{ cancelled_rides }}</strong>
+                </div>
+                <div class="sr-bar">
+                    <div class="sr-bar-fill" style="width:{{ (cancelled_rides / total_rides * 100) if total_rides > 0 else 0 }}%; background:#e74c3c;"></div>
+                </div>
+            </div>
+            <div class="mb-2">
+                <div class="d-flex justify-between mb-1">
+                    <span>Breakdown/Delayed</span>
+                    <strong>{{ breakdown_rides }}</strong>
+                </div>
+                <div class="sr-bar">
+                    <div class="sr-bar-fill" style="width:{{ (breakdown_rides / total_rides * 100) if total_rides > 0 else 0 }}%; background:#f39c12;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Booking Breakdown -->
+    <div class="col">
+        <div class="card p-3">
+            <h6 style="color:#1B3A6B;" class="mb-3">🎫 Booking Status</h6>
+            <div class="mb-2">
+                <div class="d-flex justify-between mb-1">
+                    <span>Confirmed</span>
+                    <strong>{{ confirmed_bookings }}</strong>
+                </div>
+                <div class="sr-bar">
+                    <div class="sr-bar-fill" style="width:{{ (confirmed_bookings / total_bookings * 100) if total_bookings > 0 else 0 }}%; background:#27ae60;"></div>
+                </div>
+            </div>
+            <div class="mb-2">
+                <div class="d-flex justify-between mb-1">
+                    <span>Pending</span>
+                    <strong>{{ pending_bookings }}</strong>
+                </div>
+                <div class="sr-bar">
+                    <div class="sr-bar-fill" style="width:{{ (pending_bookings / total_bookings * 100) if total_bookings > 0 else 0 }}%; background:#f39c12;"></div>
+                </div>
+            </div>
+            <div class="mb-2">
+                <div class="d-flex justify-between mb-1">
+                    <span>Cancelled</span>
+                    <strong>{{ cancelled_bookings }}</strong>
+                </div>
+                <div class="sr-bar">
+                    <div class="sr-bar-fill" style="width:{{ (cancelled_bookings / total_bookings * 100) if total_bookings > 0 else 0 }}%; background:#e74c3c;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Top Drivers -->
+<div class="row mb-4">
+    <div class="col-2">
+        <div class="card p-3">
+            <h6 style="color:#1B3A6B;" class="mb-3">🏆 Top Rated Drivers</h6>
+            {% if top_drivers %}
+                {% for driver in top_drivers %}
+                <div class="d-flex justify-between align-center mb-2 p-2" style="background:#f8faff; border-radius:8px;">
+                    <div>
+                        <strong>{{ driver.full_name }}</strong><br>
+                        <small class="text-muted">{{ driver.ride_count }} rides</small>
+                    </div>
+                    <span class="badge badge-warning">{{ driver.avg_rating }}⭐</span>
+                </div>
+                {% endfor %}
+            {% else %}
+                <p class="text-muted">No reviews yet.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Most Popular Routes -->
+    <div class="col">
+        <div class="card p-3">
+            <h6 style="color:#1B3A6B;" class="mb-3">📍 Most Popular Routes</h6>
+            {% if popular_routes %}
+                {% for route in popular_routes %}
+                <div class="d-flex justify-between align-center mb-2 p-2" style="background:#f8faff; border-radius:8px;">
+                    <span>{{ route.origin }} → {{ route.destination }}</span>
+                    <span class="badge badge-primary">{{ route.count }} rides</span>
+                </div>
+                {% endfor %}
+            {% else %}
+                <p class="text-muted">No rides yet.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activity -->
+<div class="card p-3 mb-4">
+    <h6 style="color:#1B3A6B;" class="mb-3">🕐 Recent Registrations</h6>
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Verified</th>
+                <th>Joined</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in recent_users %}
+            <tr>
+                <td>{{ user.full_name }}</td>
+                <td>{{ user.email }}</td>
+                <td><span class="badge badge-primary">{{ user.role }}</span></td>
+                <td>{% if user.verified %}✅{% else %}❌{% endif %}</td>
+                <td>{{ user.created_at.strftime('%d %b %Y') }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

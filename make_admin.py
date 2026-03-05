@@ -3,7 +3,7 @@ from scholar_ride.models import User
 
 app = create_app()
 with app.app_context():
-    user = User.query.filter_by(email='22202467@dut4life.ac.za').first()
+    user = User.query.filter_by(email='bongagazu10@gmail.com').first()
     if user:
         user.role = 'admin'
         db.session.commit()

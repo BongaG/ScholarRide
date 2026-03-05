@@ -1,43 +1,237 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="auth-wrapper">
-    <div class="auth-card">
-        <h3>🎓 Create Account</h3>
-        <form method="POST" action="/register">
+    <div class="auth-card" style="max-width:520px;">
+        <h3>📝 Create Account</h3>
+        <form method="POST" action="/register" id="registerForm">
+
             <div class="form-group">
                 <label>Full Name</label>
-                <input type="text" name="full_name" class="form-control" placeholder="Your full name" required>
+                <input type="text" name="full_name" class="form-control" required>
             </div>
+
             <div class="form-group">
-                <label>Student/Staff Number</label>
-                <input type="text" name="student_number" class="form-control" placeholder="e.g. 22202467" required>
-            </div>
-            <div class="form-group">
-                <label>DUT Email</label>
-                <input type="email" name="email" class="form-control" placeholder="22202467@dut4life.ac.za" required>
-            </div>
-            <div class="form-group">
-                <label>Phone Number</label>
-                <input type="text" name="phone" class="form-control" placeholder="0812345678" required>
-            </div>
-            <div class="form-group">
-                <label>I am registering as</label>
-                <select name="role" class="form-select" required>
-                    <option value="student">Student or Staff</option>
+                <label>Role</label>
+                <select name="role" id="role" class="form-select"
+                        required onchange="toggleFields()">
+                    <option value="">-- Select Role --</option>
+                    <option value="student">Student</option>
+                    <option value="staff">Staff</option>
                     <option value="driver">Driver</option>
                 </select>
             </div>
+
+            <div id="studentFields" style="display:none;">
+                <div class="form-group">
+                    <label>Student Number</label>
+                    <input type="text" name="student_number" id="studentNumber"
+                           class="form-control" placeholder="e.g. 22202467" maxlength="8">
+                    <small id="studentMsg"></small>
+                </div>
+            </div>
+
+            <div id="staffFields" style="display:none;">
+                <div class="form-group">
+                    <label>Staff Number</label>
+                    <input type="text" name="staff_number" id="staffNumber"
+                           class="form-control" placeholder="e.g. ST00123">
+                    <small id="staffMsg"></small>
+                </div>
+                <div class="form-group">
+                    <label>Department</label>
+                    <select name="department" class="form-select">
+                        <option value="">-- Select Department --</option>
+                        <option>Information Technology</option>
+                        <option>Engineering</option>
+                        <option>Business Studies</option>
+                        <option>Health Sciences</option>
+                        <option>Applied Sciences</option>
+                        <option>Arts and Design</option>
+                        <option>Management Sciences</option>
+                        <option>Education</option>
+                        <option>Other</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="driverFields" style="display:none;">
+                <div class="form-group">
+                    <label>Student/Staff Number</label>
+                    <input type="text" name="driver_number"
+                           class="form-control" placeholder="e.g. 22202467 or ST00123">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>DUT Email</label>
+                <input type="email" name="email" id="emailInput"
+                       class="form-control" required>
+                <small id="emailMsg"></small>
+            </div>
+
+            <div class="form-group">
+                <label>Phone Number</label>
+                <input type="text" name="phone" class="form-control"
+                       pattern="[0-9]{10}"
+                       title="Enter a valid 10-digit phone number" required>
+            </div>
+
             <div class="form-group">
                 <label>Password</label>
-                <input type="password" name="password" class="form-control" placeholder="Choose a password" required>
+                <input type="password" name="password" id="password"
+                       class="form-control" required>
+                <div style="height:6px; background:#e9ecef; border-radius:3px; margin-top:6px;">
+                    <div id="strengthBar" style="height:6px; width:0%; border-radius:3px; transition:all 0.3s;"></div>
+                </div>
+                <small id="strengthText"></small>
+                <ul class="list-unstyled mt-1" style="font-size:0.8rem;">
+                    <li id="req-length" style="color:red;">✗ At least 8 characters</li>
+                    <li id="req-upper" style="color:red;">✗ At least one uppercase letter</li>
+                    <li id="req-lower" style="color:red;">✗ At least one lowercase letter</li>
+                    <li id="req-number" style="color:red;">✗ At least one number</li>
+                    <li id="req-special" style="color:red;">✗ At least one special character (!@#$%^&*)</li>
+                </ul>
             </div>
+
             <div class="form-group">
                 <label>Confirm Password</label>
-                <input type="password" name="confirm_password" class="form-control" placeholder="Repeat password" required>
+                <input type="password" name="confirm_password"
+                       id="confirmPassword" class="form-control" required>
+                <small id="matchText"></small>
             </div>
-            <button type="submit" class="btn btn-primary btn-block mt-1">Create Account</button>
+
+            <button type="submit" class="btn btn-primary btn-block mt-2">
+                Register
+            </button>
         </form>
-        <div class="auth-divider">Already registered? <a href="/login">Login</a></div>
+        <div class="auth-divider">
+            Already have an account? <a href="/login">Login here</a>
+        </div>
     </div>
 </div>
+
+<script>
+function toggleFields() {
+    const role = document.getElementById('role').value;
+    document.getElementById('studentFields').style.display = role === 'student' ? 'block' : 'none';
+    document.getElementById('staffFields').style.display = role === 'staff' ? 'block' : 'none';
+    document.getElementById('driverFields').style.display = role === 'driver' ? 'block' : 'none';
+    validateEmail();
+}
+
+const emailInput = document.getElementById('emailInput');
+const roleSelect = document.getElementById('role');
+
+function validateEmail() {
+    const email = emailInput.value;
+    const role = roleSelect.value;
+    const msg = document.getElementById('emailMsg');
+
+    if (!email) { msg.textContent = ''; return; }
+
+    if (role === 'student' && !email.endsWith('@dut4life.ac.za')) {
+        msg.textContent = '✗ Students must use @dut4life.ac.za';
+        msg.style.color = 'red';
+    } else if (role === 'staff' && !email.endsWith('@dut.ac.za')) {
+        msg.textContent = '✗ Staff must use @dut.ac.za';
+        msg.style.color = 'red';
+    } else if (role === 'driver' && !email.endsWith('@dut4life.ac.za') && !email.endsWith('@dut.ac.za')) {
+        msg.textContent = '✗ Drivers must use a valid DUT email';
+        msg.style.color = 'red';
+    } else if (email.includes('@')) {
+        msg.textContent = '✓ Valid DUT email';
+        msg.style.color = 'green';
+    } else {
+        msg.textContent = '';
+    }
+}
+
+emailInput.addEventListener('input', validateEmail);
+roleSelect.addEventListener('change', validateEmail);
+
+const studentInput = document.getElementById('studentNumber');
+if (studentInput) {
+    studentInput.addEventListener('input', function() {
+        const msg = document.getElementById('studentMsg');
+        const val = this.value;
+        if (val.length === 8 && /^\d+$/.test(val)) {
+            msg.textContent = '✓ Valid student number';
+            msg.style.color = 'green';
+        } else if (val.length > 0) {
+            msg.textContent = '✗ Must be exactly 8 digits';
+            msg.style.color = 'red';
+        } else {
+            msg.textContent = '';
+        }
+    });
+}
+
+const staffInput = document.getElementById('staffNumber');
+if (staffInput) {
+    staffInput.addEventListener('input', function() {
+        const msg = document.getElementById('staffMsg');
+        const val = this.value.toUpperCase();
+        if (val.startsWith('ST') && val.length > 2 && /^\d+$/.test(val.substring(2))) {
+            msg.textContent = '✓ Valid staff number';
+            msg.style.color = 'green';
+        } else if (val.length > 0) {
+            msg.textContent = '✗ Must start with ST followed by numbers';
+            msg.style.color = 'red';
+        } else {
+            msg.textContent = '';
+        }
+    });
+}
+
+const passwordInput = document.getElementById('password');
+const confirmInput = document.getElementById('confirmPassword');
+const strengthBar = document.getElementById('strengthBar');
+const strengthText = document.getElementById('strengthText');
+
+function checkRequirement(id, condition) {
+    const el = document.getElementById(id);
+    if (condition) {
+        el.style.color = 'green';
+        el.textContent = '✓ ' + el.textContent.substring(2);
+    } else {
+        el.style.color = 'red';
+        el.textContent = '✗ ' + el.textContent.substring(2);
+    }
+}
+
+passwordInput.addEventListener('input', function() {
+    const val = this.value;
+    const hasLength = val.length >= 8;
+    const hasUpper = /[A-Z]/.test(val);
+    const hasLower = /[a-z]/.test(val);
+    const hasNumber = /[0-9]/.test(val);
+    const hasSpecial = /[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/.test(val);
+
+    checkRequirement('req-length', hasLength);
+    checkRequirement('req-upper', hasUpper);
+    checkRequirement('req-lower', hasLower);
+    checkRequirement('req-number', hasNumber);
+    checkRequirement('req-special', hasSpecial);
+
+    const score = [hasLength, hasUpper, hasLower, hasNumber, hasSpecial].filter(Boolean).length;
+    const colors = ['', '#dc3545', '#fd7e14', '#ffc107', '#20c997', '#28a745'];
+    const labels = ['', 'Very Weak', 'Weak', 'Fair', 'Strong', 'Very Strong'];
+
+    strengthBar.style.width = (score * 20) + '%';
+    strengthBar.style.background = colors[score];
+    strengthText.textContent = score > 0 ? labels[score] : '';
+    strengthText.style.color = colors[score];
+});
+
+confirmInput.addEventListener('input', function() {
+    const matchText = document.getElementById('matchText');
+    if (this.value === passwordInput.value) {
+        matchText.textContent = '✓ Passwords match';
+        matchText.style.color = 'green';
+    } else {
+        matchText.textContent = '✗ Passwords do not match';
+        matchText.style.color = 'red';
+    }
+});
+</script>
 {% endblock %}

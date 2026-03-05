@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-header">
+    <h4>📋 My Bookings</h4>
+</div>
+
+{% if bookings %}
+    {% for booking in bookings %}
+    <div class="ride-card">
+        <div>
+            <div class="ride-route">
+                {{ booking.ride.origin }} → {{ booking.ride.destination }}
+            </div>
+            <div class="ride-meta">
+                🕐 {{ booking.ride.departure_time.strftime('%d %b %Y at %H:%M') }}
+            </div>
+            <div class="ride-meta">
+                👤 Driver: {{ booking.ride.driver.full_name }}
+            </div>
+            <div class="ride-meta mt-1">
+                Ride Status:
+                <span class="badge
+                    {% if booking.ride.status == 'active' %}badge-success
+                    {% elif booking.ride.status == 'cancelled' %}badge-danger
+                    {% elif booking.ride.status == 'delayed' %}badge-warning
+                    {% elif booking.ride.status == 'completed' %}badge-secondary
+                    {% else %}badge-info{% endif %}">
+                    {{ booking.ride.status | upper }}
+                </span>
+            </div>
+        </div>
+       <div class="text-center">
+    <span class="badge
+        {% if booking.status == 'confirmed' %}badge-success
+        {% elif booking.status == 'pending' %}badge-warning
+        {% elif booking.status == 'cancelled' %}badge-danger
+        {% else %}badge-secondary{% endif %}
+        " style="font-size:0.9rem; padding:0.4rem 0.9rem;">
+        {{ booking.status | upper }}
+    </span>
+    <br><br>
+    {% if booking.status in ['pending', 'confirmed'] and booking.ride.status in ['active', 'delayed'] %}
+    <a href="/bookings/{{ booking.id }}/cancel"
+       class="btn btn-danger btn-sm"
+       onclick="return confirm('Cancel this booking?')">
+        Cancel Booking
+    </a>
+    {% endif %}
+    {% if booking.ride.status == 'completed' %}
+    <a href="/rides/{{ booking.ride_id }}/review" class="btn btn-warning btn-sm mt-1">
+        ⭐ Rate Driver
+    </a>
+    {% endif %}
+</div>
+    </div>
+    {% endfor %}
+{% else %}
+    <div class="empty-state">
+        <div class="empty-icon">🎫</div>
+        <p>You have no bookings yet.</p>
+        <a href="/rides" class="btn btn-primary">Find a Ride</a>
+    </div>
+{% endif %}
+{% endblock %}

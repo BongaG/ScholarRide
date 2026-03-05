@@ -4,146 +4,248 @@
     <i class="bi bi-speedometer2"></i> Admin Dashboard
 </h4>
 
-<!-- Stats Cards -->
+<!-- Stats -->
 <div class="row mb-4">
     <div class="col-md-3">
         <div class="card p-3 text-center">
-            <i class="bi bi-people-fill fs-2" style="color:#1B3A6B;"></i>
             <h3>{{ total_users }}</h3>
             <p class="text-muted mb-0">Total Users</p>
         </div>
     </div>
     <div class="col-md-3">
         <div class="card p-3 text-center">
-            <i class="bi bi-car-front-fill fs-2" style="color:#2E75B6;"></i>
             <h3>{{ active_rides }}</h3>
             <p class="text-muted mb-0">Active Rides</p>
         </div>
     </div>
     <div class="col-md-3">
         <div class="card p-3 text-center">
-            <i class="bi bi-ticket-fill fs-2" style="color:#28a745;"></i>
             <h3>{{ total_bookings }}</h3>
             <p class="text-muted mb-0">Total Bookings</p>
         </div>
     </div>
     <div class="col-md-3">
         <div class="card p-3 text-center">
-            <i class="bi bi-megaphone-fill fs-2" style="color:#ffc107;"></i>
             <h3>{{ total_announcements }}</h3>
             <p class="text-muted mb-0">Announcements</p>
         </div>
     </div>
 </div>
 
-<div class="row">
-    <!-- Users Table -->
-    <div class="col-md-7">
-        <div class="card p-3 mb-4">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h6 style="color:#1B3A6B;" class="mb-0">
-                    <i class="bi bi-people"></i> All Users
-                </h6>
-            </div>
-            <table class="table table-hover table-sm">
-                <thead class="table-dark">
-                    <tr>
-                        <th>Name</th>
-                        <th>Email</th>
-                        <th>Role</th>
-                        <th>Verified</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for user in users %}
-                    <tr>
-                        <td>{{ user.full_name }}</td>
-                        <td>{{ user.email }}</td>
-                        <td>
-                            <span class="badge 
-                                {% if user.role == 'admin' %}bg-danger
-                                {% elif user.role == 'driver' %}bg-primary
-                                {% else %}bg-secondary{% endif %}">
-                                {{ user.role }}
-                            </span>
-                        </td>
-                        <td>
-                            {% if user.verified %}
-                                <i class="bi bi-check-circle-fill text-success"></i>
-                            {% else %}
-                                <i class="bi bi-x-circle-fill text-danger"></i>
-                            {% endif %}
-                        </td>
-                        <td>
-                            <a href="/admin/users/{{ user.id }}/toggle" 
-                               class="btn btn-sm btn-outline-danger">
-                                {% if user.verified %}Deactivate{% else %}Activate{% endif %}
-                            </a>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    <!-- Announcements Panel -->
-    <div class="col-md-5">
-        <div class="card p-3 mb-4">
-            <h6 style="color:#1B3A6B;" class="mb-3">
-                <i class="bi bi-megaphone"></i> Post Announcement
-            </h6>
-            <form method="POST" action="/admin/announcements">
-                <div class="mb-2">
-                    <input type="text" name="title" class="form-control" 
-                           placeholder="Title" required>
-                </div>
-                <div class="mb-2">
-                    <select name="category" class="form-select">
-                        <option value="general">General</option>
-                        <option value="delay">Delay</option>
-                        <option value="cancellation">Cancellation</option>
-                        <option value="breakdown">Breakdown</option>
-                        <option value="route_change">Route Change</option>
-                    </select>
-                </div>
-                <div class="mb-2">
-                    <textarea name="body" class="form-control" rows="3" 
-                              placeholder="Message..." required></textarea>
-                </div>
-                <button type="submit" class="btn btn-primary w-100">
-                    <i class="bi bi-send"></i> Post Announcement
-                </button>
-            </form>
-        </div>
-
-        <!-- Recent Announcements -->
-        <div class="card p-3">
-            <h6 style="color:#1B3A6B;" class="mb-3">
-                <i class="bi bi-bell"></i> Recent Announcements
-            </h6>
-            {% if announcements %}
-                {% for ann in announcements %}
-                <div class="border-bottom pb-2 mb-2">
-                    <strong>{{ ann.title }}</strong>
-                    <span class="badge 
-                        {% if ann.category == 'breakdown' %}bg-danger
-                        {% elif ann.category == 'delay' %}bg-warning
-                        {% elif ann.category == 'cancellation' %}bg-danger
-                        {% else %}bg-info{% endif %} ms-1">
-                        {{ ann.category }}
+<!-- USERS -->
+<div class="card p-3 mb-4">
+    <h5 style="color:#1B3A6B;" class="mb-3">Users</h5>
+    <table class="table table-hover table-sm">
+        <thead class="table-dark">
+            <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Verified</th>
+                <th>Change Role</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in users %}
+            <tr>
+                <td>{{ user.full_name }}</td>
+                <td>{{ user.email }}</td>
+                <td>
+                    <span class="badge
+                        {% if user.role == 'admin' %}bg-danger
+                        {% elif user.role == 'driver' %}bg-primary
+                        {% else %}bg-secondary{% endif %}">
+                        {{ user.role }}
                     </span>
-                    <p class="mb-0 text-muted small">{{ ann.body }}</p>
-                    <small class="text-muted">
-                        {{ ann.created_at.strftime('%d %b %Y %H:%M') }}
-                    </small>
-                </div>
-                {% endfor %}
-            {% else %}
-                <p class="text-muted">No announcements yet.</p>
-            {% endif %}
-        </div>
-    </div>
+                </td>
+                <td>
+                    {% if user.verified %}
+                        Yes
+                    {% else %}
+                        No
+                    {% endif %}
+                </td>
+                <td>
+                    <form method="POST"
+                          action="/admin/users/{{ user.id }}/role"
+                          style="display:flex; gap:4px;">
+                        <select name="role" class="form-select form-select-sm">
+                            <option value="student" {% if user.role == 'student' %}selected{% endif %}>Student</option>
+                            <option value="driver" {% if user.role == 'driver' %}selected{% endif %}>Driver</option>
+                            <option value="admin" {% if user.role == 'admin' %}selected{% endif %}>Admin</option>
+                        </select>
+                        <button type="submit" class="btn btn-sm btn-primary">Save</button>
+                    </form>
+                </td>
+                <td>
+                    <a href="/admin/users/{{ user.id }}/toggle"
+                       class="btn btn-sm btn-warning">
+                        {% if user.verified %}Deactivate{% else %}Activate{% endif %}
+                    </a>
+                    {% if user.id != current_user.id %}
+                    <a href="/admin/users/{{ user.id }}/delete"
+                       class="btn btn-sm btn-danger"
+                       onclick="return confirm('Delete {{ user.full_name }}?')">
+                        Delete
+                    </a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 </div>
+
+<!-- RIDES -->
+<div class="card p-3 mb-4">
+    <h5 style="color:#1B3A6B;" class="mb-3">All Rides</h5>
+    <table class="table table-hover table-sm">
+        <thead class="table-dark">
+            <tr>
+                <th>Route</th>
+                <th>Driver</th>
+                <th>Departure</th>
+                <th>Seats</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for ride in all_rides %}
+            <tr>
+                <td>{{ ride.origin }} to {{ ride.destination }}</td>
+                <td>{{ ride.driver.full_name }}</td>
+                <td>{{ ride.departure_time.strftime('%d %b %Y %H:%M') }}</td>
+                <td>{{ ride.available_seats }}/{{ ride.total_seats }}</td>
+                <td>
+                    <span class="badge
+                        {% if ride.status == 'active' %}bg-success
+                        {% elif ride.status == 'cancelled' %}bg-danger
+                        {% elif ride.status == 'delayed' %}bg-warning
+                        {% else %}bg-secondary{% endif %}">
+                        {{ ride.status }}
+                    </span>
+                </td>
+                <td>
+                    {% if ride.status == 'active' %}
+                    <a href="/admin/rides/{{ ride.id }}/cancel"
+                       class="btn btn-sm btn-warning"
+                       onclick="return confirm('Cancel this ride?')">
+                        Cancel
+                    </a>
+                    {% endif %}
+                    <a href="/admin/rides/{{ ride.id }}/delete"
+                       class="btn btn-sm btn-danger"
+                       onclick="return confirm('Delete this ride?')">
+                        Delete
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- ANNOUNCEMENTS -->
+<div class="card p-3 mb-4">
+    <h5 style="color:#1B3A6B;" class="mb-3">Post Announcement</h5>
+    <form method="POST" action="/admin/announcements">
+        <div class="row g-2">
+            <div class="col-md-4">
+                <input type="text" name="title" class="form-control"
+                       placeholder="Title" required>
+            </div>
+            <div class="col-md-2">
+                <select name="category" class="form-select">
+                    <option value="general">General</option>
+                    <option value="delay">Delay</option>
+                    <option value="cancellation">Cancellation</option>
+                    <option value="breakdown">Breakdown</option>
+                    <option value="route_change">Route Change</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <input type="text" name="body" class="form-control"
+                       placeholder="Message..." required>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">Post</button>
+            </div>
+        </div>
+    </form>
+
+    <hr>
+    <h6 class="mt-2">All Announcements</h6>
+    {% if announcements %}
+        {% for ann in announcements %}
+        <div class="d-flex justify-content-between border-bottom py-2">
+            <div>
+                <strong>{{ ann.title }}</strong>
+                <span class="badge ms-1
+                    {% if ann.category == 'breakdown' %}bg-danger
+                    {% elif ann.category == 'delay' %}bg-warning
+                    {% elif ann.category == 'cancellation' %}bg-danger
+                    {% else %}bg-info{% endif %}">
+                    {{ ann.category }}
+                </span>
+                <p class="mb-0 text-muted small">{{ ann.body }}</p>
+                <small class="text-muted">{{ ann.created_at.strftime('%d %b %Y %H:%M') }}</small>
+            </div>
+            <a href="/admin/announcements/{{ ann.id }}/delete"
+               class="btn btn-sm btn-danger ms-2"
+               onclick="return confirm('Delete this announcement?')">
+                Delete
+            </a>
+        </div>
+        {% endfor %}
+    {% else %}
+        <p class="text-muted">No announcements yet.</p>
+    {% endif %}
+</div>
+
+<!-- DISPUTES -->
+<div class="card p-3 mb-4">
+    <h5 style="color:#1B3A6B;" class="mb-3">Disputes</h5>
+    {% if disputes %}
+        {% for dispute in disputes %}
+        <div class="border-bottom pb-3 mb-3">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <strong>Reported by:</strong>
+                    {{ dispute.reported_by_user.full_name if dispute.reported_by_user else 'Unknown' }}
+                    <span class="mx-2">against</span>
+                    <strong>{{ dispute.reported_against_user.full_name if dispute.reported_against_user else 'Unknown' }}</strong>
+                    <span class="badge ms-2
+                        {% if dispute.status == 'open' %}bg-danger
+                        {% else %}bg-success{% endif %}">
+                        {{ dispute.status }}
+                    </span>
+                </div>
+                <small class="text-muted">{{ dispute.created_at.strftime('%d %b %Y') }}</small>
+            </div>
+            <p class="mt-2 mb-2">{{ dispute.description }}</p>
+            {% if dispute.status == 'open' %}
+            <form method="POST"
+                  action="/admin/disputes/{{ dispute.id }}/resolve"
+                  style="display:inline;">
+                <select name="action" class="form-select form-select-sm d-inline w-auto">
+                    <option value="warn">Warn User</option>
+                    <option value="ban">Ban User</option>
+                </select>
+                <button type="submit" class="btn btn-sm btn-warning ms-1">Resolve</button>
+            </form>
+            {% endif %}
+            <a href="/admin/disputes/{{ dispute.id }}/delete"
+               class="btn btn-sm btn-danger ms-1"
+               onclick="return confirm('Delete this dispute?')">
+                Delete
+            </a>
+        </div>
+        {% endfor %}
+    {% else %}
+        <p class="text-muted">No disputes reported yet.</p>
+    {% endif %}
+</div>
+
 {% endblock %}

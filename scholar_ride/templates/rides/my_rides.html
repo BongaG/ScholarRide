@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-header d-flex justify-between align-center">
+    <h4>🚗 My Rides</h4>
+    <a href="/rides/post" class="btn btn-primary">+ Post New Ride</a>
+</div>
+
+{% if rides %}
+    {% for ride in rides %}
+    <div class="ride-card">
+        <div>
+            <div class="ride-route">
+                {{ ride.origin }} → {{ ride.destination }}
+            </div>
+            <div class="ride-meta">
+                🕐 {{ ride.departure_time.strftime('%d %b %Y at %H:%M') }}
+            </div>
+            <div class="ride-meta">
+                💺 {{ ride.available_seats }}/{{ ride.total_seats }} seats available
+            </div>
+        </div>
+        <div class="text-center">
+            <span class="badge
+                {% if ride.status == 'active' %}badge-success
+                {% elif ride.status == 'cancelled' %}badge-danger
+                {% elif ride.status == 'delayed' %}badge-warning
+                {% elif ride.status == 'completed' %}badge-secondary
+                {% elif ride.status == 'breakdown' %}badge-danger
+                {% else %}badge-info{% endif %}"
+                style="font-size:0.9rem; padding:0.4rem 0.9rem;">
+                {{ ride.status | upper }}
+            </span>
+            <br><br>
+            <a href="/rides/{{ ride.id }}" class="btn btn-outline btn-sm">
+                View Details
+            </a>
+        </div>
+    </div>
+    {% endfor %}
+{% else %}
+    <div class="empty-state">
+        <div class="empty-icon">🚗</div>
+        <p>You have not posted any rides yet.</p>
+        <a href="/rides/post" class="btn btn-primary">Post a Ride</a>
+    </div>
+{% endif %}
+{% endblock %}
