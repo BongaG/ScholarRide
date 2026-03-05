@@ -1,12 +1,33 @@
-from flask import Blueprint, render_template, request, redirect, flash, session, current_app
-from scholar_ride import db, bcrypt, mail
-from scholar_ride.models import User
-from flask_mail import Message
-from flask_login import login_required, current_user
+from flask import Blueprint, render_template, request, redirect, flash, session
+from scholar_ride import db, bcrypt
 from scholar_ride.models import User, Notification
+from flask_login import login_required, current_user
 import random
+import urllib.request
+import json
 
 auth = Blueprint('auth', __name__)
+
+SENDGRID_API_KEY = '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'
+SENDER_EMAIL = 'bongagazu10@gmail.com'
+
+def send_email(to_email, subject, body):
+    data = json.dumps({
+        "personalizations": [{"to": [{"email": to_email}]}],
+        "from": {"email": SENDER_EMAIL},
+        "subject": subject,
+        "content": [{"type": "text/plain", "value": body}]
+    }).encode('utf-8')
+
+    req = urllib.request.Request(
+        'https://api.sendgrid.com/v3/mail/send',
+        data=data,
+        headers={
+            'Authorization': f'Bearer {SENDGRID_API_KEY}',
+            'Content-Type': 'application/json'
+        }
+    )
+    urllib.request.urlopen(req)
 
 
 @auth.route('/')
@@ -102,13 +123,11 @@ def register():
         session['otp_email'] = email
 
         try:
-            msg = Message(
-                subject='Scholar-Ride: Your Verification Code',
-                sender=current_app.config['MAIL_USERNAME'],
-                recipients=[email]
+            send_email(
+                email,
+                'Scholar-Ride: Your Verification Code',
+                f'Hi {full_name},\n\nYour verification code is: {otp}\n\nEnter this on the verification page to activate your account.\n\n– Scholar-Ride Team'
             )
-            msg.body = f'Hi {full_name},\n\nYour verification code is: {otp}\n\nEnter this on the verification page to activate your account.\n\n– Scholar-Ride Team'
-            mail.send(msg)
             flash('A verification code has been sent to your email.', 'success')
         except Exception as e:
             print(f'EMAIL ERROR: {e}')
@@ -195,13 +214,11 @@ def forgot_password():
         session['reset_email'] = email
 
         try:
-            msg = Message(
-                subject='Scholar-Ride: Password Reset Code',
-                sender=current_app.config['MAIL_USERNAME'],
-                recipients=[email]
+            send_email(
+                email,
+                'Scholar-Ride: Password Reset Code',
+                f'Hi {user.full_name},\n\nYour password reset code is: {otp}\n\nEnter this code to reset your password.\n\n– Scholar-Ride Team'
             )
-            msg.body = f'Hi {user.full_name},\n\nYour password reset code is: {otp}\n\nEnter this code to reset your password.\n\n– Scholar-Ride Team'
-            mail.send(msg)
             flash('A reset code has been sent to your email.', 'success')
         except Exception as e:
             print(f'EMAIL ERROR: {e}')
