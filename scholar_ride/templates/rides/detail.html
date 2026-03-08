@@ -4,46 +4,50 @@
     <div class="col-md-8">
         <div class="card p-4 mb-3">
             <h4 style="color:#1B3A6B;">
-                <i class="bi bi-geo-alt-fill"></i> {{ ride.origin }} 
-                <i class="bi bi-arrow-right"></i> {{ ride.destination }}
+                📍 {{ ride.origin }} → 🏁 {{ ride.destination }}
             </h4>
             <hr>
             <div class="row">
                 <div class="col-md-6">
-                    <p><i class="bi bi-clock"></i> <strong>Departure:</strong><br>
+                    <p><strong>Departure:</strong><br>
                     {{ ride.departure_time.strftime('%d %B %Y at %H:%M') }}</p>
-                    <p><i class="bi bi-person-fill"></i> <strong>Driver:</strong><br>
+                    <p><strong>Driver:</strong><br>
                     {{ ride.driver.full_name }}</p>
                 </div>
                 <div class="col-md-6">
-                    <p><i class="bi bi-people-fill"></i> <strong>Seats Available:</strong><br>
+                    <p><strong>Seats Available:</strong><br>
                     {% if ride.available_seats > 0 %}
-                        <span class="badge bg-success fs-6">{{ ride.available_seats }} left</span>
+                        <span class="badge badge-success">{{ ride.available_seats }} left</span>
                     {% else %}
-                        <span class="badge bg-danger fs-6">Full</span>
+                        <span class="badge badge-danger">Full</span>
                     {% endif %}
                     </p>
-                    <p><i class="bi bi-info-circle"></i> <strong>Status:</strong><br>
-                    <span class="badge 
-                        {% if ride.status == 'active' %}bg-primary
-                        {% elif ride.status == 'cancelled' %}bg-danger
-                        {% elif ride.status == 'delayed' %}bg-warning
-                        {% else %}bg-secondary{% endif %}">
+                    <p><strong>Status:</strong><br>
+                    <span class="badge
+                        {% if ride.status == 'active' %}badge-primary
+                        {% elif ride.status == 'cancelled' %}badge-danger
+                        {% elif ride.status == 'delayed' %}badge-warning
+                        {% else %}badge-secondary{% endif %}">
                         {{ ride.status | upper }}
                     </span></p>
                 </div>
             </div>
 
-            {% if current_user.role == 'student' and ride.status == 'active' %}
+            <!-- Route Map -->
+            <div class="mb-3">
+                <label style="font-weight:600; color:#1B3A6B;">🗺️ Route Map</label>
+                <div id="map" style="height:300px; width:100%; border-radius:10px; z-index:0;"></div>
+            </div>
+
+            {% if current_user.role in ['student', 'staff'] and ride.status == 'active' %}
                 {% if already_booked %}
                     <div class="alert alert-info mt-3">
-                        <i class="bi bi-check-circle"></i> 
-                        You have already requested this ride. Status: <strong>{{ booking_status }}</strong>
+                        ✅ You have already requested this ride. Status: <strong>{{ booking_status }}</strong>
                     </div>
                 {% elif ride.available_seats > 0 %}
                     <form method="POST" action="/bookings/request/{{ ride.id }}">
                         <button type="submit" class="btn btn-primary mt-3 w-100">
-                            <i class="bi bi-car-front"></i> Request a Seat
+                            🚗 Request a Seat
                         </button>
                     </form>
                 {% else %}
@@ -55,9 +59,9 @@
             <hr>
             <h6>Update Ride Status</h6>
             <form method="POST" action="/rides/{{ ride.id }}/update">
-                <div class="row g-2">
+                <div class="row">
                     <div class="col-md-8">
-                        <select name="status" class="form-select">
+                        <select name="status" class="form-control">
                             <option value="active">Active</option>
                             <option value="delayed">Delayed</option>
                             <option value="breakdown">Breakdown</option>
@@ -74,30 +78,27 @@
         </div>
     </div>
 
-    <!-- Bookings Panel for Driver -->
     {% if current_user.id == ride.driver_id %}
     <div class="col-md-4">
         <div class="card p-3">
-            <h6 style="color:#1B3A6B;">
-                <i class="bi bi-list-check"></i> Seat Requests
-            </h6>
+            <h6 style="color:#1B3A6B;">🎫 Seat Requests</h6>
             <hr>
             {% if bookings %}
                 {% for booking in bookings %}
-                <div class="mb-2 p-2 border rounded">
+                <div class="request-item mb-2">
                     <strong>{{ booking.student.full_name }}</strong><br>
                     <small class="text-muted">{{ booking.student.phone }}</small><br>
-                    <span class="badge 
-                        {% if booking.status == 'confirmed' %}bg-success
-                        {% elif booking.status == 'pending' %}bg-warning
-                        {% else %}bg-danger{% endif %}">
+                    <span class="badge
+                        {% if booking.status == 'confirmed' %}badge-success
+                        {% elif booking.status == 'pending' %}badge-warning
+                        {% else %}badge-danger{% endif %}">
                         {{ booking.status }}
                     </span>
                     {% if booking.status == 'pending' %}
-                    <div class="mt-1">
-                        <a href="/bookings/{{ booking.id }}/approve" 
+                    <div class="mt-1 d-flex gap-1">
+                        <a href="/bookings/{{ booking.id }}/approve"
                            class="btn btn-sm btn-success">Accept</a>
-                        <a href="/bookings/{{ booking.id }}/reject" 
+                        <a href="/bookings/{{ booking.id }}/reject"
                            class="btn btn-sm btn-danger">Reject</a>
                     </div>
                     {% endif %}
@@ -110,12 +111,10 @@
     </div>
     {% endif %}
 </div>
-<!-- Dispute Form -->
+
 {% if current_user.id != ride.driver_id %}
 <div class="card p-3 mt-3">
-    <h6 style="color:#dc3545;">
-        <i class="bi bi-flag"></i> Report an Issue
-    </h6>
+    <h6 style="color:#dc3545;">🚩 Report an Issue</h6>
     <form method="POST" action="/disputes/submit">
         <input type="hidden" name="ride_id" value="{{ ride.id }}">
         <input type="hidden" name="reported_user_id" value="{{ ride.driver_id }}">
@@ -127,4 +126,102 @@
     </form>
 </div>
 {% endif %}
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet.fullscreen@1.6.0/Control.FullScreen.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.fullscreen@1.6.0/Control.FullScreen.js"></script>
+
+<script>
+const map = L.map('map', {
+    zoomControl: true,
+    fullscreenControl: true,
+    fullscreenControlOptions: { position: 'topleft' }
+}).setView([-29.85, 30.9], 12);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors',
+    maxZoom: 19
+}).addTo(map);
+
+setTimeout(() => { map.invalidateSize(); }, 300);
+
+const blueIcon = L.icon({
+    iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+    shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+    iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34]
+});
+
+const redIcon = L.icon({
+    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
+    shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+    iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34]
+});
+
+async function geocode(place) {
+    try {
+        const res = await fetch(
+            `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(place + ' Durban South Africa')}&format=json&limit=1`
+        );
+        const data = await res.json();
+        if (data.length > 0) {
+            return [parseFloat(data[0].lat), parseFloat(data[0].lon)];
+        }
+    } catch(e) { console.log('Geocode error:', e); }
+    return null;
+}
+
+async function getRoute(originCoords, destCoords) {
+    try {
+        const url = `https://router.project-osrm.org/route/v1/driving/${originCoords[1]},${originCoords[0]};${destCoords[1]},${destCoords[0]}?overview=full&geometries=geojson`;
+        const res = await fetch(url);
+        const data = await res.json();
+        if (data.routes && data.routes.length > 0) {
+            return data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+        }
+    } catch(e) { console.log('Route error:', e); }
+    return null;
+}
+
+async function showRoute() {
+    const origin = '{{ ride.origin }}';
+    const destination = '{{ ride.destination }}';
+
+    const originCoords = await geocode(origin);
+    const destCoords = await geocode(destination);
+
+    if (!originCoords || !destCoords) return;
+
+    L.marker(originCoords, { icon: blueIcon })
+        .bindPopup('📍 Pickup: ' + origin)
+        .addTo(map)
+        .openPopup();
+
+    L.marker(destCoords, { icon: redIcon })
+        .bindPopup('🏁 Destination: ' + destination)
+        .addTo(map);
+
+    const routeCoords = await getRoute(originCoords, destCoords);
+
+    if (routeCoords) {
+        L.polyline(routeCoords, {
+            color: '#1B3A6B',
+            weight: 5,
+            opacity: 0.8
+        }).addTo(map);
+    } else {
+        L.polyline([originCoords, destCoords], {
+            color: '#1B3A6B',
+            weight: 5,
+            dashArray: '10'
+        }).addTo(map);
+    }
+
+    const bounds = L.latLngBounds([originCoords, destCoords]);
+    map.fitBounds(bounds, { padding: [60, 60] });
+}
+
+showRoute();
+</script>
+
 {% endblock %}

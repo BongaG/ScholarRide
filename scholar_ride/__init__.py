@@ -32,6 +32,10 @@ def create_app():
             ).count()
             return dict(unread_count=unread)
         return dict(unread_count=0)
+    
+    @app.context_processor
+    def inject_maptiler():
+        return dict(maptiler_key=app.config.get('MAPTILER_KEY'))
 
     from .routes.auth import auth
     from .routes.rides import rides
