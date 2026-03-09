@@ -186,7 +186,7 @@
         <ul class="nav-links" id="navLinks">
             {% if current_user and current_user.is_authenticated %}
                 <li><a href="/rides">🔍 Find Rides</a></li>
-                {% if current_user.role in ['driver', 'staff'] %}
+                {% if current_user.role in ['driver'] %}
                 <li><a href="/rides/post">➕ Post Ride</a></li>
                 {% endif %}
                 <li><a href="/transport">🚌 Transport</a></li>
@@ -213,10 +213,10 @@
                         {% endif %}
                     </a>
                 </li>
-                {% if current_user.role == 'student' %}
+                {% if current_user.role == 'student','staff' %}
                 <li><a href="/bookings/my">🎫 My Bookings</a></li>
                 {% endif %}
-                {% if current_user.role in ['driver', 'staff'] %}
+                {% if current_user.role in ['driver'] %}
                 <li><a href="/rides/my">🚗 My Rides</a></li>
                 {% endif %}
                 <li><a href="/profile">👤 Profile</a></li>

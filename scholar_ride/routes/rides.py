@@ -38,8 +38,8 @@ def index():
 @rides.route('/rides/post', methods=['GET', 'POST'])
 @login_required
 def post_ride():
-    if current_user.role not in ['driver', 'staff']:
-        flash('Only drivers and staff can post rides.', 'danger')
+    if current_user.role not in ['driver']:
+        flash('Only drivers can post rides.', 'danger')
         return redirect('/rides')
 
     if request.method == 'POST':

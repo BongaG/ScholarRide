@@ -15,7 +15,7 @@ def request_seat(ride_id):
         flash('Sorry, this ride is full.', 'danger')
         return redirect(f'/rides/{ride_id}')
 
-    # Check double booking on same ride
+    
     existing = Booking.query.filter_by(
         ride_id=ride_id, student_id=current_user.id
     ).first()
@@ -23,7 +23,7 @@ def request_seat(ride_id):
         flash('You have already requested this ride.', 'warning')
         return redirect(f'/rides/{ride_id}')
 
-    # Check if user already has an active booking on any ride
+    
     active_booking = Booking.query.join(Ride).filter(
         Booking.student_id == current_user.id,
         Booking.status.in_(['pending', 'confirmed']),

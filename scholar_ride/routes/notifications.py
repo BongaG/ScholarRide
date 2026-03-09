@@ -12,7 +12,7 @@ def index():
         user_id=current_user.id
     ).order_by(Notification.created_at.desc()).all()
 
-    # Mark all as read
+   
     for n in notifs:
         n.is_read = True
     db.session.commit()
