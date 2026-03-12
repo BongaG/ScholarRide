@@ -48,6 +48,9 @@ def post_ride():
         departure_date = request.form.get('departure_date')
         departure_time = request.form.get('departure_time')
         seats = int(request.form.get('seats'))
+        vehicle_type = request.form.get('vehicle_type')
+        vehicle_model = request.form.get('vehicle_model')
+        registration_number = request.form.get('registration_number')
 
         departure_dt = datetime.strptime(
             f'{departure_date} {departure_time}', '%Y-%m-%d %H:%M'
@@ -59,7 +62,10 @@ def post_ride():
             destination=destination,
             departure_time=departure_dt,
             available_seats=seats,
-            total_seats=seats
+            total_seats=seats,
+            vehicle_type=vehicle_type,
+            vehicle_model=vehicle_model,
+            registration_number=registration_number
         )
         db.session.add(ride)
         db.session.commit()
@@ -126,6 +132,26 @@ def update_ride(ride_id):
             db.session.add(notif)
         db.session.commit()
 
+    if new_status in ['cancelled', 'delayed', 'breakdown']:
+        from scholar_ride.models import Notification
+        bookings = Booking.query.filter_by(
+            ride_id=ride_id, status='confirmed'
+        ).all()
+        for booking in bookings:
+            msg = f'Your ride from {ride.origin} to {ride.destination} has been marked as {new_status.upper()}.'
+            notif = Notification(user_id=booking.student_id, message=msg)
+            db.session.add(notif)
+        db.session.commit()
+
+    if new_status in ['completed', 'cancelled']:
+        from scholar_ride.models import Vehicle
+        vehicle = Vehicle.query.filter_by(current_ride_id=ride.id).first()
+        if vehicle:
+            vehicle.status = 'available'
+            vehicle.current_driver_id = None
+            vehicle.current_ride_id = None
+            db.session.commit()
+
     flash(f'Ride status updated to {new_status}.', 'success')
     return redirect(f'/rides/{ride_id}')
 
@@ -163,6 +189,15 @@ def leave_review(ride_id):
 
     if not booking:
         flash('You can only review rides you were confirmed on.', 'danger')
+        return redirect('/bookings/my')
+
+    if ride.status != 'completed':
+        flash('You can only review a ride after it has been completed.', 'warning')
+        return redirect('/bookings/my')
+
+    from datetime import datetime, timedelta
+    if ride.departure_time < datetime.utcnow() - timedelta(minutes=30):
+        flash('The 30 Minutes review window for this ride has closed.', 'warning')
         return redirect('/bookings/my')
 
     existing = Review.query.filter_by(
@@ -209,3 +244,45 @@ def driver_reviews(driver_id):
     reviews = Review.query.filter_by(driver_id=driver_id).order_by(Review.created_at.desc()).all()
     avg_rating = round(sum(r.rating for r in reviews) / len(reviews), 1) if reviews else 0
     return render_template('rides/driver_reviews.html', driver=driver, reviews=reviews, avg_rating=avg_rating)
+
+
+@rides.route('/rides/<int:ride_id>/broadcast', methods=['POST'])
+@login_required
+def broadcast_message(ride_id):
+    ride = Ride.query.get_or_404(ride_id)
+
+    if current_user.id != ride.driver_id:
+        flash('Not authorised.', 'danger')
+        return redirect(f'/rides/{ride_id}')
+
+    msg_type = request.form.get('msg_type')
+    custom_msg = request.form.get('custom_msg', '').strip()
+
+    if msg_type == 'delay':
+        eta = request.form.get('eta', '').strip()
+        message = f'⏰ Delay Update — Your ride from {ride.origin} to {ride.destination} is delayed. New ETA: {eta}.'
+    elif msg_type == 'breakdown':
+        message = f'🔧 Breakdown Alert — Your ride from {ride.origin} to {ride.destination} has broken down. Please check for updates.'
+    elif msg_type == 'cancelled':
+        message = f'❌ Ride Cancelled — Your ride from {ride.origin} to {ride.destination} has been cancelled by the driver.'
+    elif msg_type == 'custom':
+        if not custom_msg:
+            flash('Please enter a message.', 'warning')
+            return redirect(f'/rides/{ride_id}')
+        message = f'📢 Driver Update — {custom_msg}'
+    else:
+        flash('Invalid message type.', 'danger')
+        return redirect(f'/rides/{ride_id}')
+
+    confirmed_bookings = Booking.query.filter_by(
+        ride_id=ride_id, status='confirmed'
+    ).all()
+
+    for booking in confirmed_bookings:
+        notif = Notification(user_id=booking.student_id, message=message)
+        db.session.add(notif)
+
+    db.session.commit()
+
+    flash(f'Message sent to {len(confirmed_bookings)} passenger(s).', 'success')
+    return redirect(f'/rides/{ride_id}')

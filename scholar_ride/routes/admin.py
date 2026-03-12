@@ -3,6 +3,7 @@ from flask_login import login_required, current_user
 from flask_mail import Message
 from flask import current_app
 from scholar_ride import db, mail
+from datetime import datetime
 from scholar_ride.models import User, Ride, Booking, Announcement, Notification, Dispute
 import random
 
@@ -58,10 +59,10 @@ def dashboard():
                            active_rides=active_rides,
                            total_bookings=total_bookings,
                            total_announcements=total_announcements,
-                           pending_count=pending_count)
-
-
-# ── REGISTRATION APPROVAL ─────────────────────────────────────────────────────
+                           pending_count=pending_count
+                           
+                           
+                           )
 
 @admin.route('/admin/registrations')
 @login_required
@@ -405,3 +406,139 @@ def database_viewer():
         disputes=disputes,
         announcements=announcements
     )
+
+
+@admin.route('/admin/fleet')
+@login_required
+def fleet():
+    if current_user.role not in ['admin', 'driver']:
+        flash('Not authorised.', 'danger')
+        return redirect('/rides')
+    from scholar_ride.models import Vehicle
+    vehicles = Vehicle.query.order_by(Vehicle.bus_number).all()
+    return render_template('admin/fleet.html', vehicles=vehicles)
+
+
+@admin.route('/admin/fleet/add', methods=['GET', 'POST'])
+@login_required
+def add_vehicle():
+    if current_user.role != 'admin':
+        flash('Not authorised.', 'danger')
+        return redirect('/rides')
+    from scholar_ride.models import Vehicle
+    if request.method == 'POST':
+        bus_number = request.form.get('bus_number')
+        registration_number = request.form.get('registration_number')
+        vehicle_type = request.form.get('vehicle_type')
+        make_model = request.form.get('make_model')
+        capacity = int(request.form.get('capacity'))
+        notes = request.form.get('notes')
+
+        existing = Vehicle.query.filter_by(bus_number=bus_number).first()
+        if existing:
+            flash('Bus number already exists.', 'danger')
+            return redirect('/admin/fleet/add')
+
+        vehicle = Vehicle(
+            bus_number=bus_number,
+            registration_number=registration_number,
+            vehicle_type=vehicle_type,
+            make_model=make_model,
+            capacity=capacity,
+            notes=notes
+        )
+        db.session.add(vehicle)
+        db.session.commit()
+        flash(f'Vehicle {bus_number} added to fleet!', 'success')
+        return redirect('/admin/fleet')
+
+    return render_template('admin/add_vehicle.html')
+
+
+@admin.route('/admin/fleet/<int:vehicle_id>/status', methods=['POST'])
+@login_required
+def update_vehicle_status(vehicle_id):
+    if current_user.role != 'admin':
+        flash('Not authorised.', 'danger')
+        return redirect('/rides')
+    from scholar_ride.models import Vehicle
+    vehicle = Vehicle.query.get_or_404(vehicle_id)
+    new_status = request.form.get('status')
+    vehicle.status = new_status
+    if new_status == 'available':
+        vehicle.current_driver_id = None
+        vehicle.current_ride_id = None
+    db.session.commit()
+    flash(f'Vehicle {vehicle.bus_number} status updated to {new_status}.', 'success')
+    return redirect('/admin/fleet')
+
+
+@admin.route('/admin/fleet/<int:vehicle_id>/delete', methods=['POST'])
+@login_required
+def delete_vehicle(vehicle_id):
+    if current_user.role != 'admin':
+        flash('Not authorised.', 'danger')
+        return redirect('/rides')
+    from scholar_ride.models import Vehicle
+    vehicle = Vehicle.query.get_or_404(vehicle_id)
+    db.session.delete(vehicle)
+    db.session.commit()
+    flash('Vehicle removed from fleet.', 'success')
+    return redirect('/admin/fleet')
+
+@admin.route('/admin/fleet/<int:vehicle_id>/take', methods=['GET', 'POST'])
+@login_required
+def take_vehicle(vehicle_id):
+    if current_user.role != 'driver':
+        flash('Only drivers can take vehicles.', 'danger')
+        return redirect('/admin/fleet')
+    
+    from scholar_ride.models import Vehicle
+    vehicle = Vehicle.query.get_or_404(vehicle_id)
+
+    if vehicle.status != 'available':
+        flash('This vehicle is not available.', 'danger')
+        return redirect('/admin/fleet')
+
+    if request.method == 'POST':
+        origin = request.form.get('origin')
+        destination = request.form.get('destination')
+        departure_date = request.form.get('departure_date')
+        departure_time = request.form.get('departure_time')
+
+        departure_dt = datetime.strptime(
+            f'{departure_date} {departure_time}', '%Y-%m-%d %H:%M'
+        )
+
+        ride = Ride(
+            driver_id=current_user.id,
+            origin=origin,
+            destination=destination,
+            departure_time=departure_dt,
+            available_seats=vehicle.capacity,
+            total_seats=vehicle.capacity,
+            vehicle_type=vehicle.vehicle_type,
+            vehicle_model=vehicle.make_model,
+            registration_number=vehicle.registration_number
+        )
+        db.session.add(ride)
+        db.session.flush()
+
+        vehicle.status = 'on_trip'
+        vehicle.current_driver_id = current_user.id
+        vehicle.current_ride_id = ride.id
+        db.session.commit()
+
+        admins = User.query.filter_by(role='admin').all()
+        for admin_user in admins:
+            notif = Notification(
+                user_id=admin_user.id,
+                message=f'🚌 Driver {current_user.full_name} has taken {vehicle.bus_number} ({vehicle.registration_number}) from {origin} to {destination} — Departure {departure_dt.strftime("%H:%M")}'
+            )
+            db.session.add(notif)
+        db.session.commit()
+
+        flash(f'Ride posted! You have taken {vehicle.bus_number}.', 'success')
+        return redirect(f'/rides/{ride.id}')
+
+    return render_template('admin/take_vehicle.html', vehicle=vehicle)

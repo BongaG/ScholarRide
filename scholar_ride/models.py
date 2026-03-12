@@ -34,8 +34,10 @@ class Ride(db.Model):
     total_seats = db.Column(db.Integer, nullable=False)
     status = db.Column(db.String(20), default='active')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
     bookings = db.relationship('Booking', backref='ride', lazy=True)
+    vehicle_type = db.Column(db.String(50), nullable=True)
+    vehicle_model = db.Column(db.String(100), nullable=True)
+    registration_number = db.Column(db.String(20), nullable=True)
 
 class Booking(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -82,3 +84,19 @@ class Review(db.Model):
 
     reviewer = db.relationship('User', foreign_keys=[reviewer_id])
     driver = db.relationship('User', foreign_keys=[driver_id])
+
+class Vehicle(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    bus_number = db.Column(db.String(20), unique=True, nullable=False)
+    registration_number = db.Column(db.String(20), unique=True, nullable=False)
+    vehicle_type = db.Column(db.String(50), nullable=False)
+    make_model = db.Column(db.String(100), nullable=False)
+    capacity = db.Column(db.Integer, nullable=False)
+    status = db.Column(db.String(20), default='available')
+    current_driver_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    current_ride_id = db.Column(db.Integer, db.ForeignKey('ride.id'), nullable=True)
+    notes = db.Column(db.String(200), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    current_driver = db.relationship('User', foreign_keys=[current_driver_id])
+    current_ride = db.relationship('Ride', foreign_keys=[current_ride_id])

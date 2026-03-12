@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-header d-flex justify-between align-center mb-3">
+    <div>
+        <h4 style="color:#1B3A6B;">🚌 Fleet</h4>
+        <p class="text-muted">All DUT vehicles and their current status</p>
+    </div>
+    {% if current_user.role == 'admin' %}
+    <a href="/admin/fleet/add" class="btn btn-primary">➕ Add Vehicle</a>
+    {% endif %}
+</div>
+
+<!-- Status Summary -->
+<div class="row mb-3">
+    <div class="col">
+        <div class="stat-card">
+            <div class="stat-number" style="color:#27ae60;">
+                {{ vehicles | selectattr('status', 'equalto', 'available') | list | length }}
+            </div>
+            <div class="stat-label">Available</div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="stat-card">
+            <div class="stat-number" style="color:#1B3A6B;">
+                {{ vehicles | selectattr('status', 'equalto', 'on_trip') | list | length }}
+            </div>
+            <div class="stat-label">On Trip</div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="stat-card">
+            <div class="stat-number" style="color:#f39c12;">
+                {{ vehicles | selectattr('status', 'equalto', 'maintenance') | list | length }}
+            </div>
+            <div class="stat-label">Maintenance</div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="stat-card">
+            <div class="stat-number" style="color:#e74c3c;">
+                {{ vehicles | selectattr('status', 'equalto', 'out_of_service') | list | length }}
+            </div>
+            <div class="stat-label">Out of Service</div>
+        </div>
+    </div>
+</div>
+
+<!-- Fleet Table -->
+<div class="card p-3">
+    {% if vehicles %}
+    <table>
+        <thead>
+            <tr>
+                <th>Bus No.</th>
+                <th>Registration</th>
+                <th>Type</th>
+                <th>Make/Model</th>
+                <th>Capacity</th>
+                <th>Status</th>
+                <th>Current Driver</th>
+                <th>Current Route</th>
+                {% if current_user.role in ['admin', 'driver'] %}
+                <th>Actions</th>
+                {% endif %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for vehicle in vehicles %}
+            <tr>
+                <td><strong>{{ vehicle.bus_number }}</strong></td>
+                <td>{{ vehicle.registration_number }}</td>
+                <td>{{ vehicle.vehicle_type }}</td>
+                <td>{{ vehicle.make_model }}</td>
+                <td>{{ vehicle.capacity }} seats</td>
+                <td>
+                    <span class="badge
+                        {% if vehicle.status == 'available' %}badge-success
+                        {% elif vehicle.status == 'on_trip' %}badge-primary
+                        {% elif vehicle.status == 'maintenance' %}badge-warning
+                        {% else %}badge-danger{% endif %}">
+                        {{ vehicle.status | replace('_', ' ') | upper }}
+                    </span>
+                </td>
+                <td>
+                    {% if vehicle.current_driver %}
+                        {{ vehicle.current_driver.full_name }}
+                    {% else %}
+                        <span class="text-muted">—</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if vehicle.current_ride %}
+                        {{ vehicle.current_ride.origin }} → {{ vehicle.current_ride.destination }}
+                    {% else %}
+                        <span class="text-muted">—</span>
+                    {% endif %}
+                </td>
+                {% if current_user.role in ['admin', 'driver'] %}
+                <td>
+                    {% if current_user.role == 'driver' and vehicle.status == 'available' %}
+                        <a href="/admin/fleet/{{ vehicle.id }}/take" class="btn btn-sm btn-success">🚌 Take</a>
+                    {% elif current_user.role == 'driver' and vehicle.status != 'available' %}
+                        <span class="text-muted" style="font-size:0.8rem;">Not available</span>
+                    {% endif %}
+
+                    {% if current_user.role == 'admin' %}
+                        <form method="POST" action="/admin/fleet/{{ vehicle.id }}/status" style="display:inline;">
+                            <select name="status" class="form-control" style="width:130px; display:inline; font-size:0.8rem;">
+                                <option value="available" {% if vehicle.status == 'available' %}selected{% endif %}>Available</option>
+                                <option value="on_trip" {% if vehicle.status == 'on_trip' %}selected{% endif %}>On Trip</option>
+                                <option value="maintenance" {% if vehicle.status == 'maintenance' %}selected{% endif %}>Maintenance</option>
+                                <option value="out_of_service" {% if vehicle.status == 'out_of_service' %}selected{% endif %}>Out of Service</option>
+                            </select>
+                            <button type="submit" class="btn btn-sm btn-warning">Update</button>
+                        </form>
+                        <form method="POST" action="/admin/fleet/{{ vehicle.id }}/delete" style="display:inline;">
+                            <button type="submit" class="btn btn-sm btn-danger"
+                                    onclick="return confirm('Remove this vehicle from fleet?')">Delete</button>
+                        </form>
+                    {% endif %}
+                </td>
+                {% endif %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-icon">🚌</div>
+        <p>No vehicles in fleet yet.</p>
+        {% if current_user.role == 'admin' %}
+        <a href="/admin/fleet/add" class="btn btn-primary">Add First Vehicle</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

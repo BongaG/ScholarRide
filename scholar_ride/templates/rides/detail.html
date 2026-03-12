@@ -1,72 +1,121 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="row">
-    <div class="col-md-8">
+
+<style>
+.detail-wrapper { display: flex; gap: 1.5rem; align-items: flex-start; }
+.detail-left { flex: 1.2; min-width: 0; }
+.detail-right { flex: 1; min-width: 0; }
+.map-card { background: white; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.07); overflow: hidden; position: sticky; top: 1rem; }
+#map { height: 350px; width: 100%; z-index: 0; }
+.route-info { display: flex; gap: 1rem; padding: 0.75rem 1rem; background: #f8faff; border-top: 1px solid #eee; }
+.route-stat { flex: 1; text-align: center; }
+.route-stat .stat-val { font-size: 1.1rem; font-weight: 700; color: #1B3A6B; }
+.route-stat .stat-lbl { font-size: 0.75rem; color: #888; }
+.info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem; }
+.info-item { background: #f8faff; border-radius: 8px; padding: 0.75rem; }
+.info-item .lbl { font-size: 0.75rem; color: #888; margin-bottom: 0.2rem; }
+.info-item .val { font-size: 0.9rem; font-weight: 600; color: #222; }
+@media (max-width: 768px) {
+    .detail-wrapper { flex-direction: column; }
+    .map-card { position: static; }
+    #map { height: 250px; }
+    .info-grid { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 480px) {
+    .info-grid { grid-template-columns: 1fr; }
+}
+</style>
+
+<!-- Page Header -->
+<div class="page-header d-flex justify-between align-center mb-2">
+    <div>
+        <h4 style="color:#1B3A6B; margin-bottom:0.25rem;">🚌 Ride Details</h4>
+        <p class="text-muted">📍 {{ ride.origin }} → 🏁 {{ ride.destination }}</p>
+    </div>
+    <a href="/rides" class="btn btn-outline btn-sm">← Back</a>
+</div>
+
+<div class="detail-wrapper">
+
+    <!-- LEFT SIDE — Ride Info -->
+    <div class="detail-left">
         <div class="card p-4 mb-3">
-            <h4 style="color:#1B3A6B;">
-                📍 {{ ride.origin }} → 🏁 {{ ride.destination }}
-            </h4>
-            <hr>
-            <div class="row">
-                <div class="col-md-6">
-                    <p><strong>Departure:</strong><br>
-                    {{ ride.departure_time.strftime('%d %B %Y at %H:%M') }}</p>
-                    <p><strong>Driver:</strong><br>
-                    {{ ride.driver.full_name }}</p>
+
+            <!-- Info Grid -->
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="lbl">🕐 Departure</div>
+                    <div class="val">{{ ride.departure_time.strftime('%d %b %Y') }}</div>
+                    <div class="val">{{ ride.departure_time.strftime('%H:%M') }}</div>
                 </div>
-                <div class="col-md-6">
-                    <p><strong>Seats Available:</strong><br>
-                    {% if ride.available_seats > 0 %}
-                        <span class="badge badge-success">{{ ride.available_seats }} left</span>
-                    {% else %}
-                        <span class="badge badge-danger">Full</span>
-                    {% endif %}
-                    </p>
-                    <p><strong>Status:</strong><br>
-                    <span class="badge
-                        {% if ride.status == 'active' %}badge-primary
-                        {% elif ride.status == 'cancelled' %}badge-danger
-                        {% elif ride.status == 'delayed' %}badge-warning
-                        {% else %}badge-secondary{% endif %}">
-                        {{ ride.status | upper }}
-                    </span></p>
+                <div class="info-item">
+                    <div class="lbl">👤 Driver</div>
+                    <div class="val">{{ ride.driver.full_name }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="lbl">🚗 Vehicle</div>
+                    <div class="val">{{ ride.vehicle_type or 'N/A' }}</div>
+                    <div style="font-size:0.8rem; color:#666;">{{ ride.vehicle_model or '' }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="lbl">🔢 Registration</div>
+                    <div class="val">{{ ride.registration_number or 'N/A' }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="lbl">💺 Seats</div>
+                    <div class="val">
+                        {% if ride.available_seats > 0 %}
+                            <span class="badge badge-success">{{ ride.available_seats }} left</span>
+                        {% else %}
+                            <span class="badge badge-danger">Full</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="info-item">
+                    <div class="lbl">📊 Status</div>
+                    <div class="val">
+                        <span class="badge
+                            {% if ride.status == 'active' %}badge-primary
+                            {% elif ride.status == 'cancelled' %}badge-danger
+                            {% elif ride.status == 'delayed' %}badge-warning
+                            {% elif ride.status == 'completed' %}badge-success
+                            {% else %}badge-secondary{% endif %}">
+                            {{ ride.status | upper }}
+                        </span>
+                    </div>
                 </div>
             </div>
 
-            <!-- Route Map -->
-            <div class="mb-3">
-                <label style="font-weight:600; color:#1B3A6B;">🗺️ Route Map</label>
-                <div id="map" style="height:300px; width:100%; border-radius:10px; z-index:0;"></div>
-            </div>
-
+            <!-- Booking Section -->
             {% if current_user.role in ['student', 'staff'] and ride.status == 'active' %}
                 {% if already_booked %}
-                    <div class="alert alert-info mt-3">
+                    <div class="alert alert-info">
                         ✅ You have already requested this ride. Status: <strong>{{ booking_status }}</strong>
                     </div>
                 {% elif ride.available_seats > 0 %}
                     <form method="POST" action="/bookings/request/{{ ride.id }}">
-                        <button type="submit" class="btn btn-primary mt-3 w-100">
+                        <button type="submit" class="btn btn-primary w-100">
                             🚗 Request a Seat
                         </button>
                     </form>
                 {% else %}
-                    <div class="alert alert-danger mt-3">This ride is full.</div>
+                    <div class="alert alert-danger">This ride is full.</div>
                 {% endif %}
             {% endif %}
 
+            <!-- Driver Status Update -->
             {% if current_user.id == ride.driver_id %}
             <hr>
-            <h6>Update Ride Status</h6>
+            <h6 style="color:#1B3A6B;">Update Ride Status</h6>
             <form method="POST" action="/rides/{{ ride.id }}/update">
                 <div class="row">
                     <div class="col-md-8">
                         <select name="status" class="form-control">
-                            <option value="active">Active</option>
-                            <option value="delayed">Delayed</option>
-                            <option value="breakdown">Breakdown</option>
-                            <option value="cancelled">Cancelled</option>
-                            <option value="completed">Completed</option>
+                            <option value="active" {% if ride.status == 'active' %}selected{% endif %}>Active</option>
+                            <option value="delayed" {% if ride.status == 'delayed' %}selected{% endif %}>Delayed</option>
+                            <option value="breakdown" {% if ride.status == 'breakdown' %}selected{% endif %}>Breakdown</option>
+                            <option value="cancelled" {% if ride.status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                            <option value="completed" {% if ride.status == 'completed' %}selected{% endif %}>Completed</option>
                         </select>
                     </div>
                     <div class="col-md-4">
@@ -76,11 +125,41 @@
             </form>
             {% endif %}
         </div>
-    </div>
 
-    {% if current_user.id == ride.driver_id %}
-    <div class="col-md-4">
-        <div class="card p-3">
+        <!-- Broadcast Panel for Driver -->
+        {% if current_user.id == ride.driver_id and ride.status in ['active', 'delayed'] %}
+        <div class="card p-3 mb-3">
+            <h6 style="color:#1B3A6B;">📢 Broadcast to Passengers</h6>
+            <hr>
+            <form method="POST" action="/rides/{{ ride.id }}/broadcast">
+                <div class="form-group mb-2">
+                    <select name="msg_type" class="form-control" id="msgType" onchange="toggleETA(this.value)" required>
+                        <option value="">— Select message type —</option>
+                        <option value="delay">⏰ Delay / ETA Update</option>
+                        <option value="breakdown">🔧 Breakdown Alert</option>
+                        <option value="cancelled">❌ Ride Cancelled</option>
+                        <option value="custom">📝 Custom Message</option>
+                    </select>
+                </div>
+                <div class="form-group mb-2" id="etaField" style="display:none;">
+                    <input type="text" name="eta" class="form-control"
+                           placeholder="e.g. 10 minutes, 14:30...">
+                </div>
+                <div class="form-group mb-2" id="customField" style="display:none;">
+                    <textarea name="custom_msg" class="form-control" rows="2"
+                              placeholder="Type your message to all passengers..."></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary w-100"
+                        onclick="return confirm('Send this message to all confirmed passengers?')">
+                    📤 Send to All Passengers
+                </button>
+            </form>
+        </div>
+        {% endif %}
+
+        <!-- Seat Requests for Driver -->
+        {% if current_user.id == ride.driver_id %}
+        <div class="card p-3 mb-3">
             <h6 style="color:#1B3A6B;">🎫 Seat Requests</h6>
             <hr>
             {% if bookings %}
@@ -96,10 +175,8 @@
                     </span>
                     {% if booking.status == 'pending' %}
                     <div class="mt-1 d-flex gap-1">
-                        <a href="/bookings/{{ booking.id }}/approve"
-                           class="btn btn-sm btn-success">Accept</a>
-                        <a href="/bookings/{{ booking.id }}/reject"
-                           class="btn btn-sm btn-danger">Reject</a>
+                        <a href="/bookings/{{ booking.id }}/approve" class="btn btn-sm btn-success">Accept</a>
+                        <a href="/bookings/{{ booking.id }}/reject" class="btn btn-sm btn-danger">Reject</a>
                     </div>
                     {% endif %}
                 </div>
@@ -108,24 +185,43 @@
                 <p class="text-muted">No requests yet.</p>
             {% endif %}
         </div>
-    </div>
-    {% endif %}
-</div>
+        {% endif %}
 
-{% if current_user.id != ride.driver_id %}
-<div class="card p-3 mt-3">
-    <h6 style="color:#dc3545;">🚩 Report an Issue</h6>
-    <form method="POST" action="/disputes/submit">
-        <input type="hidden" name="ride_id" value="{{ ride.id }}">
-        <input type="hidden" name="reported_user_id" value="{{ ride.driver_id }}">
-        <div class="mb-2">
-            <textarea name="description" class="form-control" rows="2"
-                      placeholder="Describe the issue..." required></textarea>
+        <!-- Report Issue -->
+        {% if current_user.id != ride.driver_id %}
+        <div class="card p-3">
+            <h6 style="color:#dc3545;">🚩 Report an Issue</h6>
+            <form method="POST" action="/disputes/submit">
+                <input type="hidden" name="ride_id" value="{{ ride.id }}">
+                <input type="hidden" name="reported_user_id" value="{{ ride.driver_id }}">
+                <div class="mb-2">
+                    <textarea name="description" class="form-control" rows="2"
+                              placeholder="Describe the issue..." required></textarea>
+                </div>
+                <button type="submit" class="btn btn-sm btn-danger">Submit Report</button>
+            </form>
         </div>
-        <button type="submit" class="btn btn-sm btn-danger">Submit Report</button>
-    </form>
+        {% endif %}
+    </div>
+
+    <!-- RIGHT SIDE — Map -->
+    <div class="detail-right">
+        <div class="map-card">
+            <div id="map"></div>
+            <div class="route-info">
+                <div class="route-stat">
+                    <div class="stat-val" id="duration">--</div>
+                    <div class="stat-lbl">⏱ Est. Duration</div>
+                </div>
+                <div class="route-stat">
+                    <div class="stat-val" id="distance">--</div>
+                    <div class="stat-lbl">📍 Distance</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div>
-{% endif %}
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <link rel="stylesheet" href="https://unpkg.com/leaflet.fullscreen@1.6.0/Control.FullScreen.css"/>
@@ -158,15 +254,26 @@ const redIcon = L.icon({
     iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34]
 });
 
+function formatDuration(seconds) {
+    const mins = Math.round(seconds / 60);
+    if (mins < 60) return mins + ' mins';
+    const hrs = Math.floor(mins / 60);
+    const rem = mins % 60;
+    return rem > 0 ? hrs + ' hr ' + rem + ' mins' : hrs + ' hr';
+}
+
+function formatDistance(meters) {
+    if (meters < 1000) return Math.round(meters) + ' m';
+    return (meters / 1000).toFixed(1) + ' km';
+}
+
 async function geocode(place) {
     try {
         const res = await fetch(
             `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(place + ' Durban South Africa')}&format=json&limit=1`
         );
         const data = await res.json();
-        if (data.length > 0) {
-            return [parseFloat(data[0].lat), parseFloat(data[0].lon)];
-        }
+        if (data.length > 0) return [parseFloat(data[0].lat), parseFloat(data[0].lon)];
     } catch(e) { console.log('Geocode error:', e); }
     return null;
 }
@@ -177,7 +284,11 @@ async function getRoute(originCoords, destCoords) {
         const res = await fetch(url);
         const data = await res.json();
         if (data.routes && data.routes.length > 0) {
-            return data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+            return {
+                coords: data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]),
+                duration: data.routes[0].duration,
+                distance: data.routes[0].distance
+            };
         }
     } catch(e) { console.log('Route error:', e); }
     return null;
@@ -194,34 +305,37 @@ async function showRoute() {
 
     L.marker(originCoords, { icon: blueIcon })
         .bindPopup('📍 Pickup: ' + origin)
-        .addTo(map)
-        .openPopup();
+        .addTo(map).openPopup();
 
     L.marker(destCoords, { icon: redIcon })
         .bindPopup('🏁 Destination: ' + destination)
         .addTo(map);
 
-    const routeCoords = await getRoute(originCoords, destCoords);
+    const route = await getRoute(originCoords, destCoords);
 
-    if (routeCoords) {
-        L.polyline(routeCoords, {
-            color: '#1B3A6B',
-            weight: 5,
-            opacity: 0.8
+    if (route) {
+        L.polyline(route.coords, {
+            color: '#1B3A6B', weight: 5, opacity: 0.8
         }).addTo(map);
+
+        document.getElementById('duration').textContent = formatDuration(route.duration);
+        document.getElementById('distance').textContent = formatDistance(route.distance);
     } else {
         L.polyline([originCoords, destCoords], {
-            color: '#1B3A6B',
-            weight: 5,
-            dashArray: '10'
+            color: '#1B3A6B', weight: 5, dashArray: '10'
         }).addTo(map);
     }
 
     const bounds = L.latLngBounds([originCoords, destCoords]);
-    map.fitBounds(bounds, { padding: [60, 60] });
+    map.fitBounds(bounds, { padding: [40, 40] });
 }
 
 showRoute();
+
+function toggleETA(val) {
+    document.getElementById('etaField').style.display   = val === 'delay'  ? 'block' : 'none';
+    document.getElementById('customField').style.display = val === 'custom' ? 'block' : 'none';
+}
 </script>
 
 {% endblock %}

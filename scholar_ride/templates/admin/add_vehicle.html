@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card p-4">
+            <h4 style="color:#1B3A6B;" class="mb-3">🚌 Add Vehicle to Fleet</h4>
+            <form method="POST" action="/admin/fleet/add">
+                <div class="form-group">
+                    <label>Bus Number</label>
+                    <input type="text" name="bus_number" class="form-control"
+                           placeholder="e.g. DUT-001" required>
+                </div>
+                <div class="form-group">
+                    <label>Registration Number</label>
+                    <input type="text" name="registration_number" class="form-control"
+                           placeholder="e.g. ND 123 GP" required>
+                </div>
+                <div class="form-group">
+                    <label>Vehicle Type</label>
+                    <select name="vehicle_type" class="form-control" required onchange="setCapacity(this.value)">
+                        <option value="">Select type</option>
+                        <option value="Car">Car</option>
+                        <option value="Minibus">Minibus</option>
+                        <option value="Bus">Bus</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Make and Model</label>
+                    <input type="text" name="make_model" class="form-control"
+                           placeholder="e.g. Toyota Quantum" required>
+                </div>
+                <div class="form-group">
+                    <label>Capacity (seats)</label>
+                    <input type="number" name="capacity" id="capacity" class="form-control"
+                           min="1" max="65" required>
+                </div>
+                <div class="form-group">
+                    <label>Notes (optional)</label>
+                    <input type="text" name="notes" class="form-control"
+                           placeholder="e.g. Air conditioned, wheelchair accessible">
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Add to Fleet</button>
+                <a href="/admin/fleet" class="btn btn-outline w-100 mt-1">Cancel</a>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function setCapacity(type) {
+    const cap = document.getElementById('capacity');
+    if (type === 'Car') cap.value = 4;
+    else if (type === 'Minibus') cap.value = 15;
+    else if (type === 'Bus') cap.value = 65;
+}
+</script>
+{% endblock %}

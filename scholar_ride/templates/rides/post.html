@@ -39,6 +39,28 @@
                 </div>
 
                 <div class="form-group">
+    <label>Vehicle Type</label>
+    <select name="vehicle_type" id="vehicle_type" class="form-control" required onchange="updateSeats()">
+        <option value="">Select vehicle type</option>
+        <option value="Car">Car (up to 4 passengers)</option>
+        <option value="Minibus">Minibus (up to 15 passengers)</option>
+        <option value="Bus">Bus (up to 65 passengers)</option>
+    </select>
+</div>
+
+<div class="form-group">
+    <label>Vehicle Model</label>
+    <input type="text" name="vehicle_model" class="form-control"
+           placeholder="e.g. Toyota Corolla, VW Polo" required>
+</div>
+
+<div class="form-group">
+    <label>Registration Number</label>
+    <input type="text" name="registration_number" class="form-control"
+           placeholder="e.g. ND 123 GP" required>
+</div>
+
+                <div class="form-group">
                     <label>Available Seats</label>
                     <input type="number" name="seats" class="form-control"
                            min="1" max="65" required>
@@ -169,6 +191,22 @@ document.getElementById('destination').addEventListener('input', () => {
     clearTimeout(timeout);
     timeout = setTimeout(drawRoute, 1000);
 });
+
+function updateSeats() {
+    const type = document.getElementById('vehicle_type').value;
+    const seats = document.getElementById('seats');
+    if (type === 'Car') {
+        seats.value = 4;
+        seats.max = 4;
+    } else if (type === 'Minibus') {
+        seats.value = 15;
+        seats.max = 15;
+    } else if (type === 'Bus') {
+        seats.value = 65;
+        seats.max = 65;
+    }
+}
 </script>
+
 
 {% endblock %}
