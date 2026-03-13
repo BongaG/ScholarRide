@@ -2,7 +2,7 @@
 {% block content %}
 <div class="page-header d-flex justify-between align-center">
     <h4>🚗 My Rides</h4>
-    <a href="/rides/post" class="btn btn-primary">+ Post New Ride</a>
+    
 </div>
 
 {% if rides %}
@@ -38,10 +38,11 @@
     </div>
     {% endfor %}
 {% else %}
-    <div class="empty-state">
-        <div class="empty-icon">🚗</div>
-        <p>You have not posted any rides yet.</p>
-        <a href="/rides/post" class="btn btn-primary">Post a Ride</a>
+<div class="empty-state">
+        <div class="empty-icon">🚌</div>
+        <p>You have no ride at the moment.</p>
+        <a href="/admin/fleet" class="btn btn-primary">🚌 Select a Vehicle from Fleet</a>
     </div>
+    
 {% endif %}
 {% endblock %}

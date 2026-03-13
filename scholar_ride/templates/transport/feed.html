@@ -1,37 +1,107 @@
 {% extends "base.html" %}
 {% block content %}
-<h4 style="color:#1B3A6B;" class="mb-4">
-    <i class="bi bi-bus-front"></i> Campus Transport Feed
-</h4>
+
+<div class="page-header d-flex justify-between align-center mb-3">
+    <div>
+        <h4 style="color:#1B3A6B; margin-bottom:0.25rem;">🚌 Campus Transport</h4>
+        <p class="text-muted">Live DUT fleet status and transport updates</p>
+    </div>
+</div>
+
+<!-- Fleet Status -->
+<h6 style="color:#1B3A6B; font-weight:700; margin-bottom:1rem; text-transform:uppercase; letter-spacing:1px; font-size:0.8rem;">
+    🚌 Live Fleet Status
+</h6>
+
+{% if vehicles %}
+<div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap:1rem; margin-bottom:2rem;">
+    {% for vehicle in vehicles %}
+    <div style="background:white; border-radius:12px; padding:1rem 1.2rem;
+                box-shadow:0 2px 8px rgba(0,0,0,0.07);
+                border-left: 4px solid
+                {% if vehicle.status == 'available' %}#27ae60
+                {% elif vehicle.status == 'on_trip' %}#1B3A6B
+                {% elif vehicle.status == 'maintenance' %}#f39c12
+                {% else %}#e74c3c{% endif %};">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+            <div>
+                <div style="font-weight:700; font-size:1rem; color:#1B3A6B;">{{ vehicle.bus_number }}</div>
+                <div style="font-size:0.8rem; color:#888;">{{ vehicle.registration_number }}</div>
+                <div style="font-size:0.8rem; color:#666; margin-top:0.2rem;">{{ vehicle.make_model }}</div>
+            </div>
+            <span class="badge
+                {% if vehicle.status == 'available' %}badge-success
+                {% elif vehicle.status == 'on_trip' %}badge-primary
+                {% elif vehicle.status == 'maintenance' %}badge-warning
+                {% else %}badge-danger{% endif %}"
+                style="font-size:0.7rem;">
+                {% if vehicle.status == 'available' %}🟢 AVAILABLE
+                {% elif vehicle.status == 'on_trip' %}🔵 ON TRIP
+                {% elif vehicle.status == 'maintenance' %}🟡 MAINTENANCE
+                {% else %}🔴 OUT OF SERVICE{% endif %}
+            </span>
+        </div>
+        {% if vehicle.status == 'on_trip' and vehicle.current_ride %}
+        <div style="margin-top:0.75rem; padding-top:0.75rem; border-top:1px solid #eee; font-size:0.82rem; color:#555;">
+            📍 {{ vehicle.current_ride.origin }} → 🏁 {{ vehicle.current_ride.destination }}
+        </div>
+        {% endif %}
+        {% if vehicle.status == 'maintenance' and vehicle.notes %}
+        <div style="margin-top:0.75rem; padding-top:0.75rem; border-top:1px solid #eee; font-size:0.82rem; color:#e67e22;">
+            ⚠️ {{ vehicle.notes }}
+        </div>
+        {% endif %}
+        {% if vehicle.status == 'out_of_service' %}
+        <div style="margin-top:0.75rem; padding-top:0.75rem; border-top:1px solid #eee; font-size:0.82rem; color:#e74c3c;">
+            🚫 Not in service
+        </div>
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="empty-state mb-4">
+    <div class="empty-icon">🚌</div>
+    <p>No vehicles in fleet yet.</p>
+</div>
+{% endif %}
+
+<!-- Announcements -->
+<h6 style="color:#1B3A6B; font-weight:700; margin-bottom:1rem; text-transform:uppercase; letter-spacing:1px; font-size:0.8rem;">
+    📢 Transport Announcements
+</h6>
 
 {% if announcements %}
     {% for ann in announcements %}
-    <div class="card mb-3 p-3 border-start border-4
-        {% if ann.category == 'breakdown' %}border-danger
-        {% elif ann.category == 'delay' %}border-warning
-        {% elif ann.category == 'cancellation' %}border-danger
-        {% else %}border-primary{% endif %}">
-        <div class="d-flex justify-content-between">
-            <h5>{{ ann.title }}
+    <div class="card mb-2 p-3" style="border-left: 4px solid
+        {% if ann.category == 'breakdown' %}#e74c3c
+        {% elif ann.category == 'delay' %}#f39c12
+        {% elif ann.category == 'cancellation' %}#e74c3c
+        {% else %}#1B3A6B{% endif %};">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:0.5rem;">
+            <div>
+                <strong style="color:#1B3A6B;">{{ ann.title }}</strong>
                 <span class="badge ms-2
-                    {% if ann.category == 'breakdown' %}bg-danger
-                    {% elif ann.category == 'delay' %}bg-warning
-                    {% elif ann.category == 'cancellation' %}bg-danger
-                    {% else %}bg-info{% endif %}">
+                    {% if ann.category == 'breakdown' %}badge-danger
+                    {% elif ann.category == 'delay' %}badge-warning
+                    {% elif ann.category == 'cancellation' %}badge-danger
+                    {% else %}badge-primary{% endif %}"
+                    style="font-size:0.7rem;">
                     {{ ann.category | upper }}
                 </span>
-            </h5>
-            <small class="text-muted">
+            </div>
+            <small class="text-muted" style="font-size:0.75rem;">
                 {{ ann.created_at.strftime('%d %b %Y at %H:%M') }}
             </small>
         </div>
-        <p class="mb-0">{{ ann.body }}</p>
+        <p class="mb-0 mt-1" style="font-size:0.9rem;">{{ ann.body }}</p>
     </div>
     {% endfor %}
 {% else %}
-    <div class="text-center mt-5">
-        <i class="bi bi-bus-front" style="font-size:4rem; color:#ccc;"></i>
-        <p class="text-muted mt-3">No transport updates right now.</p>
+    <div class="empty-state">
+        <div class="empty-icon">📢</div>
+        <p>No transport announcements right now.</p>
     </div>
 {% endif %}
+
 {% endblock %}

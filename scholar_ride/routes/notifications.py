@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, request
 from flask_login import login_required, current_user
 from scholar_ride import db
 from scholar_ride.models import Notification
-from datetime import datetime
+from datetime import datetime, timedelta
 
 notifications = Blueprint('notifications', __name__)
 
@@ -10,7 +10,6 @@ notifications = Blueprint('notifications', __name__)
 @login_required
 def index():
     selected_date = request.args.get('date', '')
-
     query = Notification.query.filter_by(user_id=current_user.id)
 
     if selected_date:

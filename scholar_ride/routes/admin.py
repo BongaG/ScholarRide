@@ -299,8 +299,10 @@ def delete_dispute(dispute_id):
 @admin.route('/transport')
 @login_required
 def transport_feed():
+    from scholar_ride.models import Vehicle
     announcements = Announcement.query.order_by(Announcement.created_at.desc()).all()
-    return render_template('transport/feed.html', announcements=announcements)
+    vehicles = Vehicle.query.order_by(Vehicle.bus_number).all()
+    return render_template('transport/feed.html', announcements=announcements, vehicles=vehicles)
 
 
 # ── ANALYTICS ─────────────────────────────────────────────────────────────────
@@ -498,6 +500,14 @@ def take_vehicle(vehicle_id):
 
     if vehicle.status != 'available':
         flash('This vehicle is not available.', 'danger')
+        return redirect('/admin/fleet')
+    
+    active_ride = Ride.query.filter_by(
+        driver_id=current_user.id,
+        status='active'
+    ).first()
+    if active_ride:
+        flash('You already have an active ride. Complete or cancel it before taking another vehicle.', 'warning')
         return redirect('/admin/fleet')
 
     if request.method == 'POST':

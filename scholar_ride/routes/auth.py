@@ -184,7 +184,7 @@ def login():
 
         unread = Notification.query.filter_by(user_id=user.id, is_read=False).count()
         if unread > 0:
-            flash(f'You have {unread} unread notification(s). <a href="/notifications">View</a>', 'info')
+            flash(f'You have {unread} unread notification(s). <a href="/notifications">', 'info')
 
         flash(f'Welcome back, {user.full_name}!', 'success')
         return redirect('/rides')
@@ -308,4 +308,13 @@ def profile():
         flash('Profile updated successfully.', 'success')
         return redirect('/profile')
 
-    return render_template('profile.html')
+    from scholar_ride.models import Booking, Ride
+    if current_user.role == 'driver':
+        history = Ride.query.filter_by(driver_id=current_user.id)\
+                            .order_by(Ride.departure_time.desc()).limit(5).all()
+    else:
+        bookings = Booking.query.filter_by(student_id=current_user.id)\
+                                .order_by(Booking.booking_date.desc()).limit(5).all()
+        history = [b.ride for b in bookings if b.ride][:5]
+
+    return render_template('profile.html', history=history)

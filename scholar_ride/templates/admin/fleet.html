@@ -1,8 +1,20 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="page-header d-flex justify-between align-center mb-3">
+
+<style>
+.fleet-table th, .fleet-table td { padding: 0.9rem 1rem; vertical-align: middle; }
+.fleet-table thead th { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.8px; color: #888; border-bottom: 2px solid #f0f0f0; }
+.fleet-table tbody tr { border-bottom: 1px solid #f5f5f5; }
+.fleet-table tbody tr:last-child { border-bottom: none; }
+.fleet-table tbody tr:hover { background: #f8faff; }
+.action-cell { display: flex; flex-direction: column; gap: 0.5rem; align-items: flex-start; }
+.action-cell form { margin: 0; }
+.stat-card { text-align: center; padding: 1.2rem 1rem; }
+</style>
+
+<div class="page-header d-flex justify-between align-center mb-4">
     <div>
-        <h4 style="color:#1B3A6B;">🚌 Fleet</h4>
+        <h4 style="color:#1B3A6B; margin-bottom:0.25rem;">🚌 Fleet</h4>
         <p class="text-muted">All DUT vehicles and their current status</p>
     </div>
     {% if current_user.role == 'admin' %}
@@ -11,7 +23,7 @@
 </div>
 
 <!-- Status Summary -->
-<div class="row mb-3">
+<div class="row mb-4">
     <div class="col">
         <div class="stat-card">
             <div class="stat-number" style="color:#27ae60;">
@@ -47,15 +59,15 @@
 </div>
 
 <!-- Fleet Table -->
-<div class="card p-3">
+<div class="card p-3" style="margin-top: 1.5rem;">
     {% if vehicles %}
-    <table>
+    <table class="fleet-table" style="width:100%; border-collapse:collapse;">
         <thead>
             <tr>
                 <th>Bus No.</th>
                 <th>Registration</th>
                 <th>Type</th>
-                <th>Make/Model</th>
+                <th>Make / Model</th>
                 <th>Capacity</th>
                 <th>Status</th>
                 <th>Current Driver</th>
@@ -68,7 +80,7 @@
         <tbody>
             {% for vehicle in vehicles %}
             <tr>
-                <td><strong>{{ vehicle.bus_number }}</strong></td>
+                <td><strong style="color:#1B3A6B;">{{ vehicle.bus_number }}</strong></td>
                 <td>{{ vehicle.registration_number }}</td>
                 <td>{{ vehicle.vehicle_type }}</td>
                 <td>{{ vehicle.make_model }}</td>
@@ -91,34 +103,47 @@
                 </td>
                 <td>
                     {% if vehicle.current_ride %}
-                        {{ vehicle.current_ride.origin }} → {{ vehicle.current_ride.destination }}
+                        <span style="font-size:0.85rem;">
+                            {{ vehicle.current_ride.origin }} → {{ vehicle.current_ride.destination }}
+                        </span>
                     {% else %}
                         <span class="text-muted">—</span>
                     {% endif %}
                 </td>
                 {% if current_user.role in ['admin', 'driver'] %}
                 <td>
-                    {% if current_user.role == 'driver' and vehicle.status == 'available' %}
-                        <a href="/admin/fleet/{{ vehicle.id }}/take" class="btn btn-sm btn-success">🚌 Take</a>
-                    {% elif current_user.role == 'driver' and vehicle.status != 'available' %}
-                        <span class="text-muted" style="font-size:0.8rem;">Not available</span>
-                    {% endif %}
+                    <div class="action-cell">
+                        {% if current_user.role == 'driver' %}
+                            {% if vehicle.status == 'available' %}
+                                <a href="/admin/fleet/{{ vehicle.id }}/take"
+                                   class="btn btn-sm btn-success">🚌 Take</a>
+                            {% else %}
+                                <span class="text-muted" style="font-size:0.8rem;">Not available</span>
+                            {% endif %}
+                        {% endif %}
 
-                    {% if current_user.role == 'admin' %}
-                        <form method="POST" action="/admin/fleet/{{ vehicle.id }}/status" style="display:inline;">
-                            <select name="status" class="form-control" style="width:130px; display:inline; font-size:0.8rem;">
-                                <option value="available" {% if vehicle.status == 'available' %}selected{% endif %}>Available</option>
-                                <option value="on_trip" {% if vehicle.status == 'on_trip' %}selected{% endif %}>On Trip</option>
-                                <option value="maintenance" {% if vehicle.status == 'maintenance' %}selected{% endif %}>Maintenance</option>
-                                <option value="out_of_service" {% if vehicle.status == 'out_of_service' %}selected{% endif %}>Out of Service</option>
-                            </select>
-                            <button type="submit" class="btn btn-sm btn-warning">Update</button>
-                        </form>
-                        <form method="POST" action="/admin/fleet/{{ vehicle.id }}/delete" style="display:inline;">
-                            <button type="submit" class="btn btn-sm btn-danger"
-                                    onclick="return confirm('Remove this vehicle from fleet?')">Delete</button>
-                        </form>
-                    {% endif %}
+                        {% if current_user.role == 'admin' %}
+                            <form method="POST" action="/admin/fleet/{{ vehicle.id }}/status">
+                                <select name="status" class="form-control"
+                                        style="width:140px; font-size:0.82rem; margin-bottom:0.4rem;">
+                                    <option value="available" {% if vehicle.status == 'available' %}selected{% endif %}>Available</option>
+                                    <option value="on_trip" {% if vehicle.status == 'on_trip' %}selected{% endif %}>On Trip</option>
+                                    <option value="maintenance" {% if vehicle.status == 'maintenance' %}selected{% endif %}>Maintenance</option>
+                                    <option value="out_of_service" {% if vehicle.status == 'out_of_service' %}selected{% endif %}>Out of Service</option>
+                                </select>
+                                <button type="submit" class="btn btn-sm btn-warning" style="width:140px;">
+                                    ✏️ Update
+                                </button>
+                            </form>
+                            <form method="POST" action="/admin/fleet/{{ vehicle.id }}/delete"
+                                  style="margin-top:0.3rem;">
+                                <button type="submit" class="btn btn-sm btn-danger" style="width:140px;"
+                                        onclick="return confirm('Remove this vehicle from fleet?')">
+                                    🗑️ Delete
+                                </button>
+                            </form>
+                        {% endif %}
+                    </div>
                 </td>
                 {% endif %}
             </tr>
@@ -135,4 +160,5 @@
     </div>
     {% endif %}
 </div>
+
 {% endblock %}

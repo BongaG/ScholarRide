@@ -16,7 +16,7 @@ def index():
     destination = request.args.get('destination', '')
     date = request.args.get('date', '')
 
-    query = Ride.query.filter(Ride.status != 'cancelled')
+    query = Ride.query.filter(Ride.status.in_(['active', 'delayed']))
 
     if origin:
         query = query.filter(Ride.origin.ilike(f'%{origin}%'))
@@ -38,9 +38,9 @@ def index():
 @rides.route('/rides/post', methods=['GET', 'POST'])
 @login_required
 def post_ride():
-    if current_user.role not in ['driver']:
-        flash('Only drivers can post rides.', 'danger')
-        return redirect('/rides')
+    if current_user.role == 'driver':
+        flash('Drivers must post rides through the Fleet.', 'warning')
+        return redirect('/admin/fleet')
 
     if request.method == 'POST':
         origin = request.form.get('origin')
@@ -121,13 +121,20 @@ def update_ride(ride_id):
     ride.status = new_status
     db.session.commit()
 
-    if new_status in ['cancelled', 'delayed', 'breakdown']:
+    if new_status in ['cancelled', 'delayed', 'breakdown', 'completed']:
         from scholar_ride.models import Notification
         bookings = Booking.query.filter_by(
             ride_id=ride_id, status='confirmed'
         ).all()
         for booking in bookings:
-            msg = f'Your ride from {ride.origin} to {ride.destination} has been marked as {new_status.upper()}.'
+            if new_status == 'completed':
+                msg = f'✅ Your ride from {ride.origin} to {ride.destination} has been completed. Thank you for riding with Scholar-Ride!'
+            elif new_status == 'cancelled':
+                msg = f'❌ Your ride from {ride.origin} to {ride.destination} has been cancelled.'
+            elif new_status == 'delayed':
+                msg = f'⏳ Your ride from {ride.origin} to {ride.destination} has been delayed.'
+            elif new_status == 'breakdown':
+                msg = f'🚨 Your ride from {ride.origin} to {ride.destination} has a breakdown.'
             notif = Notification(user_id=booking.student_id, message=msg)
             db.session.add(notif)
         db.session.commit()

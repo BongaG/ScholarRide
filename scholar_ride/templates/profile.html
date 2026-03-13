@@ -1,17 +1,44 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-6">
-        <div class="card p-4">
-            <h4 style="color:#1B3A6B;" class="mb-4">👤 My Profile</h4>
+<div style="display:grid; grid-template-columns:1fr 1.2fr; gap:1.5rem; align-items:flex-start;">
 
-            <!-- Profile Info -->
-            <div class="mb-4 p-3" style="background:#f8faff; border-radius:8px;">
-                <p><strong>Name:</strong> {{ current_user.full_name }}</p>
-                <p><strong>Email:</strong> {{ current_user.email }}</p>
-                <p><strong>Role:</strong> <span class="badge badge-primary">{{ current_user.role }}</span></p>
-                <p><strong>Student No:</strong> {{ current_user.student_number or 'N/A' }}</p>
-                <p class="mb-0"><strong>Phone:</strong> {{ current_user.phone }}</p>
+    <!-- LEFT — Profile Info & Edit -->
+    <div>
+        <div class="card p-4 mb-3">
+            <h4 style="color:#1B3A6B; margin-bottom:1rem;">👤 My Profile</h4>
+
+            <!-- Avatar & Name -->
+            <div style="text-align:center; margin-bottom:1.5rem;">
+                <div style="width:72px; height:72px; border-radius:50%; background:linear-gradient(135deg,#1B3A6B,#2E75B6);
+                            display:flex; align-items:center; justify-content:center;
+                            font-size:2rem; margin:0 auto 0.75rem;">
+                    {% if current_user.role == 'driver' %}🧑‍✈️
+                    {% elif current_user.role == 'admin' %}👨‍💼
+                    {% elif current_user.role == 'staff' %}👨‍🏫
+                    {% else %}🎓{% endif %}
+                </div>
+                <div style="font-weight:700; font-size:1.1rem; color:#1B3A6B;">{{ current_user.full_name }}</div>
+                <span class="badge badge-primary" style="margin-top:0.25rem;">{{ current_user.role | upper }}</span>
+            </div>
+
+            <!-- Info Grid -->
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; margin-bottom:1.5rem;">
+                <div style="background:#f8faff; border-radius:8px; padding:0.75rem;">
+                    <div style="font-size:0.75rem; color:#888;">Email</div>
+                    <div style="font-size:0.85rem; font-weight:600; word-break:break-all;">{{ current_user.email }}</div>
+                </div>
+                <div style="background:#f8faff; border-radius:8px; padding:0.75rem;">
+                    <div style="font-size:0.75rem; color:#888;">Phone</div>
+                    <div style="font-size:0.85rem; font-weight:600;">{{ current_user.phone }}</div>
+                </div>
+                <div style="background:#f8faff; border-radius:8px; padding:0.75rem;">
+                    <div style="font-size:0.75rem; color:#888;">Student No.</div>
+                    <div style="font-size:0.85rem; font-weight:600;">{{ current_user.student_number or 'N/A' }}</div>
+                </div>
+                <div style="background:#f8faff; border-radius:8px; padding:0.75rem;">
+                    <div style="font-size:0.75rem; color:#888;">Department</div>
+                    <div style="font-size:0.85rem; font-weight:600;">{{ current_user.department or 'N/A' }}</div>
+                </div>
             </div>
 
             <!-- Edit Form -->
@@ -20,31 +47,89 @@
             <form method="POST" action="/profile">
                 <div class="form-group">
                     <label>Full Name</label>
-                    <input type="text" name="full_name" class="form-control" 
+                    <input type="text" name="full_name" class="form-control"
                            value="{{ current_user.full_name }}" required>
                 </div>
                 <div class="form-group">
                     <label>Phone Number</label>
-                    <input type="text" name="phone" class="form-control" 
+                    <input type="text" name="phone" class="form-control"
                            value="{{ current_user.phone }}" required>
                 </div>
                 <hr>
-                <h6 style="color:#1B3A6B;">Change Password <small class="text-muted">(leave blank to keep current)</small></h6>
+                <h6 style="color:#1B3A6B;">Change Password
+                    <small class="text-muted" style="font-weight:400;">(leave blank to keep current)</small>
+                </h6>
                 <div class="form-group">
                     <label>New Password</label>
-                    <input type="password" name="new_password" class="form-control" 
+                    <input type="password" name="new_password" class="form-control"
                            placeholder="Leave blank to keep current">
                 </div>
                 <div class="form-group">
                     <label>Confirm New Password</label>
-                    <input type="password" name="confirm_password" class="form-control" 
+                    <input type="password" name="confirm_password" class="form-control"
                            placeholder="Leave blank to keep current">
                 </div>
-                <button type="submit" class="btn btn-primary btn-block mt-2">
-                    Save Changes
-                </button>
+                <button type="submit" class="btn btn-primary w-100 mt-2">Save Changes</button>
             </form>
         </div>
     </div>
+
+    <!-- RIGHT — Ride History -->
+    <div>
+        <div class="card p-4">
+            <h6 style="color:#1B3A6B; margin-bottom:1rem;">
+                {% if current_user.role == 'driver' %}🚗 My Recent Rides{% else %}🎫 My Ride History{% endif %}
+            </h6>
+            <hr>
+            {% if history %}
+                {% for ride in history %}
+                <div style="padding:0.75rem 0; border-bottom:1px solid #f0f0f0;">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:0.5rem; flex-wrap:wrap;">
+                        <div>
+                            <div style="font-weight:600; font-size:0.9rem; color:#1B3A6B;">
+                                {{ ride.origin }} → {{ ride.destination }}
+                            </div>
+                            <div style="font-size:0.8rem; color:#888; margin-top:0.2rem;">
+                                🕐 {{ ride.departure_time.strftime('%d %b %Y at %H:%M') }}
+                            </div>
+                        </div>
+                        <div style="display:flex; flex-direction:column; align-items:flex-end; gap:0.3rem;">
+                            <span class="badge
+                                {% if ride.status == 'active' %}badge-success
+                                {% elif ride.status == 'completed' %}badge-primary
+                                {% elif ride.status == 'cancelled' %}badge-danger
+                                {% elif ride.status == 'delayed' %}badge-warning
+                                {% else %}badge-secondary{% endif %}"
+                                style="font-size:0.7rem;">
+                                {{ ride.status | upper }}
+                            </span>
+                            <a href="/rides/{{ ride.id }}" class="btn btn-sm btn-outline"
+                               style="font-size:0.75rem; padding:0.2rem 0.6rem;">View</a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">
+                    <div class="empty-icon">
+                        {% if current_user.role == 'driver' %}🚗{% else %}🎫{% endif %}
+                    </div>
+                    <p>No ride history yet.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
 </div>
+
+<!-- Mobile: stack columns -->
+<style>
+@media (max-width: 768px) {
+    .card { margin-bottom: 1rem; }
+    div[style*="grid-template-columns:1fr 1.2fr"] {
+        display: block !important;
+    }
+}
+</style>
+
 {% endblock %}
