@@ -318,3 +318,17 @@ def profile():
         history = [b.ride for b in bookings if b.ride][:5]
 
     return render_template('profile.html', history=history)
+
+
+
+@auth.route('/')
+def landing():
+    from flask_login import current_user
+    if current_user.is_authenticated:
+        if current_user.role == 'admin':
+            return redirect('/admin')
+        elif current_user.role == 'driver':
+            return redirect('/admin/fleet')
+        else:
+            return redirect('/rides')
+    return render_template('index.html')

@@ -8,7 +8,7 @@ from scholar_ride.models import Ride, Booking, Notification, User
 rides = Blueprint('rides', __name__)
 
 
-@rides.route('/')
+
 @rides.route('/rides')
 @login_required
 def index():

@@ -103,3 +103,15 @@ class Vehicle(db.Model):
 
     current_driver = db.relationship('User', foreign_keys=[current_driver_id])
     current_ride = db.relationship('Ride', foreign_keys=[current_ride_id])
+
+
+class Inquiry(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    subject = db.Column(db.String(100), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    reply = db.Column(db.Text, nullable=True)
+    status = db.Column(db.String(20), default='open')
+    created_at = db.Column(db.DateTime, default=sast_now)
+
+    user = db.relationship('User', foreign_keys=[user_id])

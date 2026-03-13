@@ -4,7 +4,7 @@ from flask_mail import Message
 from flask import current_app
 from scholar_ride import db, mail
 from datetime import datetime
-from scholar_ride.models import User, Ride, Booking, Announcement, Notification, Dispute
+from scholar_ride.models import User, Ride, Booking, Announcement, Notification, Dispute, Inquiry
 import random
 
 admin = Blueprint('admin', __name__)
@@ -49,6 +49,7 @@ def dashboard():
     total_bookings = Booking.query.count()
     total_announcements = Announcement.query.count()
     pending_count = User.query.filter_by(approval_status='pending').count()
+    inquiries =Inquiry.query.order_by(Inquiry.created_at.desc()).all()
 
     return render_template('admin/dashboard.html',
                            users=users,
@@ -59,7 +60,8 @@ def dashboard():
                            active_rides=active_rides,
                            total_bookings=total_bookings,
                            total_announcements=total_announcements,
-                           pending_count=pending_count
+                           pending_count=pending_count,
+                           inquiries=inquiries
                            
                            
                            )
@@ -214,7 +216,7 @@ def delete_ride(ride_id):
     return redirect('/admin')
 
 
-# ── ANNOUNCEMENTS ─────────────────────────────────────────────────────────────
+
 
 @admin.route('/admin/announcements', methods=['POST'])
 @login_required
@@ -256,7 +258,7 @@ def delete_announcement(ann_id):
     return redirect('/admin')
 
 
-# ── DISPUTES ──────────────────────────────────────────────────────────────────
+
 
 @admin.route('/admin/disputes/<int:dispute_id>/resolve', methods=['POST'])
 @login_required
@@ -294,7 +296,6 @@ def delete_dispute(dispute_id):
     return redirect('/admin')
 
 
-# ── TRANSPORT FEED ────────────────────────────────────────────────────────────
 
 @admin.route('/transport')
 @login_required
@@ -552,3 +553,65 @@ def take_vehicle(vehicle_id):
         return redirect(f'/rides/{ride.id}')
 
     return render_template('admin/take_vehicle.html', vehicle=vehicle)
+
+
+
+@admin.route('/inquiries/submit', methods=['POST'])
+@login_required
+def submit_inquiry():
+    from scholar_ride.models import Inquiry
+    subject = request.form.get('subject')
+    message = request.form.get('message')
+
+    inquiry = Inquiry(
+        user_id=current_user.id,
+        subject=subject,
+        message=message
+    )
+    db.session.add(inquiry)
+
+    admins = User.query.filter_by(role='admin').all()
+    for admin_user in admins:
+        notif = Notification(
+            user_id=admin_user.id,
+            message=f'💬 New inquiry from {current_user.full_name}: {subject}'
+        )
+        db.session.add(notif)
+    db.session.commit()
+
+    flash('Your message has been sent to admin!', 'success')
+    return redirect(request.referrer or '/rides')
+
+
+@admin.route('/inquiries/<int:inquiry_id>/reply', methods=['POST'])
+@login_required
+@admin_required
+def reply_inquiry(inquiry_id):
+    from scholar_ride.models import Inquiry
+    inquiry = Inquiry.query.get_or_404(inquiry_id)
+    reply = request.form.get('reply')
+
+    inquiry.reply = reply
+    inquiry.status = 'resolved'
+
+    notif = Notification(
+        user_id=inquiry.user_id,
+        message=f'💬 Admin replied to your inquiry "{inquiry.subject}": {reply}'
+    )
+    db.session.add(notif)
+    db.session.commit()
+
+    flash('Reply sent!', 'success')
+    return redirect('/admin')
+
+
+@admin.route('/inquiries/<int:inquiry_id>/delete')
+@login_required
+@admin_required
+def delete_inquiry(inquiry_id):
+    from scholar_ride.models import Inquiry
+    inquiry = Inquiry.query.get_or_404(inquiry_id)
+    db.session.delete(inquiry)
+    db.session.commit()
+    flash('Inquiry deleted.', 'success')
+    return redirect('/admin')
