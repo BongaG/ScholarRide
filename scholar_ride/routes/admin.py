@@ -111,7 +111,7 @@ def approve_user(user_id):
 @admin_required
 def reject_user(user_id):
     user = User.query.get_or_404(user_id)
-    reason = request.form.get('reason', 'Your registration did not meet the requirements.')
+    reason = request.form.get('reason', 'Your registration did not meet the requirement.')
     user.approval_status = 'rejected'
     db.session.commit()
 
