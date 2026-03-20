@@ -134,7 +134,7 @@
             <div style="font-size:0.75rem; opacity:0.8;">We usually reply within a few hours</div>
         </div>
 
-        
+       % if current_user.role = "driver","student"  %}
         <form method="POST" action="/inquiries/submit" style="padding:1rem;">
             <div class="form-group">
                 <select name="subject" class="form-control" style="font-size:0.85rem;" required>
@@ -146,6 +146,7 @@
                     <option value="Safety concern">⚠️ Safety concern</option>
                     <option value="General question">💬 General question</option>
                 </select>
+        {% endif %}        
             </div>
             <div class="form-group">
                 <textarea name="message" class="form-control" rows="3"
