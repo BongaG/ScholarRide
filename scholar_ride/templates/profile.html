@@ -35,10 +35,13 @@
                     <div style="font-size:0.75rem; color:#888;">Student No.</div>
                     <div style="font-size:0.85rem; font-weight:600;">{{ current_user.student_number or 'N/A' }}</div>
                 </div>
+
+                {% if current user.role in ['student', 'staff', 'admin'] }
                 <div style="background:#f8faff; border-radius:8px; padding:0.75rem;">
                     <div style="font-size:0.75rem; color:#888;">Department</div>
                     <div style="font-size:0.85rem; font-weight:600;">{{ current_user.department or 'N/A' }}</div>
                 </div>
+                {% endif %}
             </div>
 
             <!-- Edit Form -->
