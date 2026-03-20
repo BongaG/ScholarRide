@@ -11,8 +11,9 @@
         <div class="d-flex justify-between align-center">
             <div>
                 <h5 style="color:#1B3A6B; margin:0;">{{ user.full_name }}</h5>
-                <p class="text-muted mb-1">📧 {{ user.email }}</p>
-                <p class="text-muted mb-1">📱 {{ user.phone }}</p>
+                <p class="text-muted mb-1"> {{ user.email }}</p>
+                <p class="text-muted mb-1"> {{ user.phone }}</p>
+                <p class="text-muted mb-1">{{user.department}}</p>
                 <p class="text-muted mb-1">
                     Role: <span class="badge badge-primary">{{ user.role }}</span>
                     {% if user.role == 'student' %}

@@ -43,13 +43,23 @@
     {% for notif in notifications %}
     <div class="card mb-2 p-3" style="border-left: 4px solid {% if not notif.is_read %}#1B3A6B{% else %}#eee{% endif %};">
         <div class="d-flex justify-content-between align-center">
-            <p class="mb-0" style="font-size:0.95rem;">
+           <div style="font-size:0.95rem; flex:1;">
                 {% if not notif.is_read %}
                     <span style="display:inline-block; width:8px; height:8px; background:#1B3A6B;
                                  border-radius:50%; margin-right:6px;"></span>
                 {% endif %}
-                {{ notif.message }}
-            </p>
+                {% if 'OVERFLOW|' in notif.message %}
+                    {% set parts = notif.message.split('|') %}
+                    {% set overflow_id = parts[1] %}
+                    {% set msg_text = parts[2] %}
+                    <span>{{ msg_text }}</span>
+                    <form method="POST" action="/rides/overflow/{{ overflow_id }}/accept" style="margin-top:0.5rem;">
+                        <button type="submit" class="btn btn-sm btn-success">✅ Accept Trip</button>
+                    </form>
+                {% else %}
+                    {{ notif.message }}
+                {% endif %}
+            </div>
             <small class="text-muted" style="white-space:nowrap; font-size:0.75rem;">
                 {{ notif.created_at.strftime('%d %b %H:%M') }}
             </small>

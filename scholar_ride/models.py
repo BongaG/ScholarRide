@@ -24,6 +24,7 @@ class User(db.Model, UserMixin):
     approval_status = db.Column(db.String(20), default='pending')
     otp = db.Column(db.String(6), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    driver_code = db.Column(db.String(20), nullable=True)
 
     rides = db.relationship('Ride', backref='driver', lazy=True)
     bookings = db.relationship('Booking', backref='student', lazy=True)
@@ -115,3 +116,17 @@ class Inquiry(db.Model):
     created_at = db.Column(db.DateTime, default=sast_now)
 
     user = db.relationship('User', foreign_keys=[user_id])
+
+
+class OverflowRequest(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    original_ride_id = db.Column(db.Integer, db.ForeignKey('ride.id'), nullable=False)
+    requesting_student_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    reason = db.Column(db.String(20), nullable=False)
+    status = db.Column(db.String(20), default='pending')
+    new_ride_id = db.Column(db.Integer, db.ForeignKey('ride.id'), nullable=True)
+    created_at = db.Column(db.DateTime, default=sast_now)
+
+    original_ride = db.relationship('Ride', foreign_keys=[original_ride_id])
+    new_ride = db.relationship('Ride', foreign_keys=[new_ride_id])
+    requesting_student = db.relationship('User', foreign_keys=[requesting_student_id])
