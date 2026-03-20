@@ -48,23 +48,20 @@
                     <div style="font-size:0.75rem; color:#888;">Faculty</div>
                     <div style="font-size:0.85rem; font-weight:600;">{{ current_user.department or 'N/A' }}</div>
                 </div>
+
+                {% if current user.role in ['student', 'staff', 'admin'] }
                 <div style="background:#f8faff; border-radius:8px; padding:0.75rem;">
                     <div style="font-size:0.75rem; color:#888;">Department</div>
                     <div style="font-size:0.85rem; font-weight:600;">{{ current_user.department or 'N/A' }}</div>
                 </div>
                 {% endif %}
-                
             </div>
 
             
             <h6 style="color:#1B3A6B;">Edit Details</h6>
             <hr>
             <form method="POST" action="/profile">
-                <div class="form-group">
-                    <label>Full Name</label>
-                    <input type="text" name="full_name" class="form-control"
-                           value="{{ current_user.full_name }}" required>
-                </div>
+               
                 <div class="form-group">
                     <label>Phone Number</label>
                     <input type="text" name="phone" class="form-control"
@@ -89,20 +86,26 @@
         </div>
     </div>
 
-{% if current_user.role not in ['admin', 'driver'] %}
-<div>
-    <div class="card p-4">
-        <h6 style="color:#1B3A6B; margin-bottom:1rem;">
-            🎫 My Ride History
-        </h6>
-        <hr>
-        {% if history %}
-            {% for ride in history %}
-            <div style="padding:0.75rem 0; border-bottom:1px solid #f0f0f0;">
-                <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:0.5rem; flex-wrap:wrap;">
-                    <div>
-                        <div style="font-weight:600; font-size:0.9rem; color:#1B3A6B;">
-                            {{ ride.origin }} → {{ ride.destination }}
+    <!-- RIGHT — Ride History -->
+    <div>
+        <div class="card p-4">
+            <h6 style="color:#1B3A6B; margin-bottom:1rem;">
+                {% if current_user.role == 'driver' %}🚗 My Recent Rides{% else %}🎫 My Ride History{% endif %}
+            </h6>
+            <hr>
+            
+            {% if current_user.role =='student','staff'}
+            {% if history %}
+             {% for ride in history %}
+                <div style="padding:0.75rem 0; border-bottom:1px solid #f0f0f0;">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:0.5rem; flex-wrap:wrap;">
+                        <div>
+                            <div style="font-weight:600; font-size:0.9rem; color:#1B3A6B;">
+                                {{ ride.origin }} → {{ ride.destination }}
+                            </div>
+                            <div style="font-size:0.8rem; color:#888; margin-top:0.2rem;">
+                                🕐 {{ ride.departure_time.strftime('%d %b %Y at %H:%M') }}
+                            </div>
                         </div>
                         <div style="font-size:0.8rem; color:#888; margin-top:0.2rem;">
                             {{ ride.departure_time.strftime('%d %b %Y at %H:%M') }}
@@ -122,14 +125,10 @@
                            style="font-size:0.75rem; padding:0.2rem 0.6rem;">View</a>
                     </div>
                 </div>
-            </div>
-            {% endfor %}
-        {% else %}
-            <div class="empty-state">
-                <div class="empty-icon">🎫</div>
-                <p>No ride history yet.</p>
-            </div>
-        {% endif %}
+
+            {% endfor % }    
+            {% endif %}
+        </div>
     </div>
 </div>
 {% endif %}

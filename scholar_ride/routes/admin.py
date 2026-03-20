@@ -98,7 +98,7 @@ def approve_user(user_id):
 
     notif = Notification(
         user_id=user.id,
-        message='✅ Your registration has been approved! Check your email for your verification code.'
+        message='✅ Your  registration has been approved' 
     )
     db.session.add(notif)
     db.session.commit()
@@ -122,7 +122,7 @@ def approve_user(user_id):
 @admin_required
 def reject_user(user_id):
     user = User.query.get_or_404(user_id)
-    reason = request.form.get('reason', 'Your registration did not meet the requirements.')
+    reason = request.form.get('reason', 'Your registration did not meet the requirement.')
     user.approval_status = 'rejected'
     db.session.commit()
 
