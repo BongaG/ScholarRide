@@ -37,11 +37,11 @@
 
 <div class="detail-wrapper">
 
-    <!-- LEFT SIDE — Ride Info -->
+    
     <div class="detail-left">
         <div class="card p-4 mb-3">
 
-            <!-- Info Grid -->
+            
             <div class="info-grid">
                 <div class="info-item">
                     <div class="lbl">🕐 Departure</div>
@@ -57,10 +57,14 @@
                     <div class="val">{{ ride.vehicle_type or 'N/A' }}</div>
                     <div style="font-size:0.8rem; color:#666;">{{ ride.vehicle_model or '' }}</div>
                 </div>
+                
                 <div class="info-item">
                     <div class="lbl">🔢 Registration</div>
                     <div class="val">{{ ride.registration_number or 'N/A' }}</div>
                 </div>
+                
+                
+                
                 <div class="info-item">
                     <div class="lbl">💺 Seats</div>
                     <div class="val">
@@ -99,11 +103,28 @@
                         </button>
                     </form>
                 {% else %}
-                    <div class="alert alert-danger">This ride is full.</div>
+                    <div class="alert alert-danger mb-2">🚫 This ride is full.</div>
+                    {% if not overflow_pending %}
+                    <form method="POST" action="/rides/{{ ride.id }}/request-overflow">
+                        <button type="submit" class="btn btn-warning w-100">
+                            🚌 Request Another Bus
+                        </button>
+                    </form>
+                    {% else %}
+                    <div class="alert alert-warning">
+                        ⏳ A replacement bus has been requested. You will be notified when a driver accepts.
+                    </div>
+                    {% endif %}
                 {% endif %}
             {% endif %}
 
-            <!-- Driver Status Update -->
+            {% if ride.status == 'breakdown' %}
+            <div class="alert alert-danger mt-2">
+                🚨 This bus has broken down. A replacement is being arranged. You will be notified.
+            </div>
+            {% endif %}
+
+            
             {% if current_user.id == ride.driver_id %}
             <hr>
             <h6 style="color:#1B3A6B;">Update Ride Status</h6>
@@ -126,7 +147,7 @@
             {% endif %}
         </div>
 
-        <!-- Broadcast Panel for Driver -->
+        
         {% if current_user.id == ride.driver_id and ride.status in ['active', 'delayed'] %}
         <div class="card p-3 mb-3">
             <h6 style="color:#1B3A6B;">📢 Broadcast to Passengers</h6>
@@ -157,7 +178,7 @@
         </div>
         {% endif %}
 
-        <!-- Seat Requests for Driver -->
+        
         {% if current_user.id == ride.driver_id %}
         <div class="card p-3 mb-3">
             <h6 style="color:#1B3A6B;">🎫 Seat Requests</h6>
@@ -187,24 +208,29 @@
         </div>
         {% endif %}
 
-        <!-- Report Issue -->
-        {% if current_user.id != ride.driver_id %}
-        <div class="card p-3">
-            <h6 style="color:#dc3545;">🚩 Report an Issue</h6>
-            <form method="POST" action="/disputes/submit">
-                <input type="hidden" name="ride_id" value="{{ ride.id }}">
-                <input type="hidden" name="reported_user_id" value="{{ ride.driver_id }}">
-                <div class="mb-2">
-                    <textarea name="description" class="form-control" rows="2"
-                              placeholder="Describe the issue..." required></textarea>
-                </div>
-                <button type="submit" class="btn btn-sm btn-danger">Submit Report</button>
-            </form>
+        
+      {% if current_user.id != ride.driver_id and already_booked and booking_status == 'confirmed' and ride.status == 'completed' %}
+<div class="card p-3">
+    <h6 style="color:#dc3545;">Report an Issue</h6>
+    {% if dispute_count < 2 %}
+    <form method="POST" action="/disputes/submit">
+        <input type="hidden" name="ride_id" value="{{ ride.id }}">
+        <input type="hidden" name="reported_user_id" value="{{ ride.driver_id }}">
+        <div class="mb-2">
+            <textarea name="description" class="form-control" rows="2"
+                      placeholder="Describe the issue..." required></textarea>
         </div>
-        {% endif %}
+        <small class="text-muted">{{ 2 - dispute_count }} report(s) remaining for this ride.</small>
+        <button type="submit" class="btn btn-sm btn-danger mt-1">Submit Report</button>
+    </form>
+    {% else %}
+    <p class="text-muted" style="font-size:0.85rem;">You have reached the maximum of 2 reports for this ride.</p>
+    {% endif %}
+</div>
+{% endif %}
     </div>
 
-    <!-- RIGHT SIDE — Map -->
+    
     <div class="detail-right">
         <div class="map-card">
             <div id="map"></div>

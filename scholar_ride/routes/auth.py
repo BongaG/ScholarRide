@@ -31,6 +31,8 @@ def home():
     return render_template('index.html')
 
 
+
+
 @auth.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
@@ -44,6 +46,7 @@ def register():
         staff_number = request.form.get('staff_number')
         driver_number = request.form.get('driver_number')
         department = request.form.get('department')
+        
 
         if password != confirm:
             flash('Passwords do not match.', 'danger')
@@ -73,6 +76,12 @@ def register():
             flash('Students must use their DUT email ending in @dut4life.ac.za', 'danger')
             return redirect('/register')
 
+        if role == 'student':
+            email_number = email.split('@')[0]
+            if student_number != email_number:
+                flash('Your student number must match the number in your email address', 'danger')
+                return redirect('/register')
+
         if role == 'staff' and not email.endswith('@dut.ac.za'):
             flash('Staff must use their DUT email ending in @dut.ac.za', 'danger')
             return redirect('/register')
@@ -95,6 +104,13 @@ def register():
         if existing:
             flash('Email already registered.', 'danger')
             return redirect('/register')
+        
+        existing = User.query.filter_by(phone=phone).first()
+        if existing:
+            flash('Phone number already exist', 'danger')
+            return redirect('/register')
+
+        
 
         hashed = bcrypt.generate_password_hash(password).decode('utf-8')
 
@@ -109,7 +125,7 @@ def register():
             approval_status='pending',
             student_number=student_number if role == 'student' else driver_number if role == 'driver' else None,
             staff_number=staff_number if role == 'staff' else None,
-            department=department if role == 'staff' else None
+            department=department if role in ['student', 'staff'] else None,
         )
         db.session.add(user)
         db.session.commit()

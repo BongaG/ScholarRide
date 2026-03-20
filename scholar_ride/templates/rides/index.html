@@ -1,148 +1,215 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="row mb-4">
+
+<style>
+.search-wrapper {
+    display: grid;
+    grid-template-columns: 1fr 280px;
+    gap: 1.5rem;
+    align-items: start;
+    margin-bottom: 1.5rem;
+}
+.calendar-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+    padding: 1rem;
+    position: sticky;
+    top: 1rem;
+}
+.cal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+.cal-header button {
+    background: none;
+    border: none;
+    font-size: 1.1rem;
+    cursor: pointer;
+    color: #1B3A6B;
+    padding: 0.2rem 0.5rem;
+    border-radius: 6px;
+}
+.cal-header button:hover { background: #f0f4ff; }
+.cal-title { font-weight: 700; color: #1B3A6B; font-size: 0.9rem; }
+.cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+}
+.cal-day-name {
+    text-align: center;
+    font-size: 0.7rem;
+    color: #888;
+    font-weight: 600;
+    padding: 0.2rem 0;
+}
+.cal-day {
+    text-align: center;
+    padding: 0.35rem 0.1rem;
+    font-size: 0.8rem;
+    border-radius: 6px;
+    cursor: pointer;
+    color: #333;
+}
+.cal-day:hover { background: #f0f4ff; color: #1B3A6B; }
+.cal-day.selected { background: #1B3A6B; color: white; font-weight: 700; }
+.cal-day.today { border: 2px solid #1B3A6B; color: #1B3A6B; font-weight: 700; }
+.cal-day.empty { cursor: default; }
+.clear-date {
+    display: block;
+    text-align: center;
+    margin-top: 0.5rem;
+    font-size: 0.8rem;
+    color: #e74c3c;
+    cursor: pointer;
+}
+.clear-date:hover { text-decoration: underline; }
+
+/* MOBILE */
+@media (max-width: 768px) {
+    .search-wrapper {
+        display: block;
+    }
+    .calendar-desktop { display: none; }
+    .calendar-mobile { display: block; }
+    .cal-day { padding: 0.6rem 0.1rem; font-size: 0.9rem; }
+}
+
+/* DESKTOP */
+@media (min-width: 769px) {
+    .calendar-mobile { display: none; }
+    .calendar-desktop { display: block; }
+}
+</style>
+
+<div class="row mb-3">
     <div class="col">
-        <h4 style="color:#1B3A6B;"><i class="bi bi-search"></i> Find a Ride</h4>
+        <h4 style="color:#1B3A6B;">Find a Ride</h4>
     </div>
-    {% if current_user.role == 'driver' %}
-    
-    {% endif %}
 </div>
 
-<!-- Search Bar -->
-<div class="card p-3 mb-4">
-    <form method="GET" action="/rides">
-        <div class="row g-2">
-            <div class="col-md-4">
-                <input type="text" name="origin" class="form-control" 
-                       placeholder="From (e.g. Durban CBD)" 
-                       value="{{ request.args.get('origin', '') }}">
-            </div>
-            <div class="col-md-4">
-                <input type="text" name="destination" class="form-control" 
-                       placeholder="To (e.g. DUT Steve Biko)" 
-                       value="{{ request.args.get('destination', '') }}">
-            </div>
-            <div class="col-md-2">
-                <input type="date" name="date" class="form-control"
-                       value="{{ request.args.get('date', '') }}">
-            </div>
-            <div class="col-md-2">
-                <button type="submit" class="btn btn-primary w-100">
-                    <i class="bi bi-search"></i> Search
-                </button>
-            </div>
+<!-- Search Form -->
+<form method="GET" action="/rides" id="searchForm">
+    <input type="hidden" name="date" id="selectedDate" value="{{ request.args.get('date', '') }}">
+    <div class="card p-3 mb-3">
+        <div style="display:flex; gap:0.75rem; flex-wrap:wrap;">
+            <input type="text" name="origin" class="form-control"
+                   style="flex:1; min-width:150px;"
+                   placeholder="From e.g. Durban CBD"
+                   value="{{ request.args.get('origin', '') }}">
+            <input type="text" name="destination" class="form-control"
+                   style="flex:1; min-width:150px;"
+                   placeholder="To e.g. DUT Steve Biko"
+                   value="{{ request.args.get('destination', '') }}">
+            <button type="submit" class="btn btn-primary">Search</button>
         </div>
-    </form>
+        {% if request.args.get('date', '') %}
+        <div style="margin-top:0.5rem; font-size:0.85rem; color:#1B3A6B;">
+            Showing rides for: <strong>{{ request.args.get('date', '') }}</strong>
+            <a href="/rides" style="color:#e74c3c; margin-left:0.5rem;">Clear date</a>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- MOBILE CALENDAR — shown between search and rides -->
+    <div class="calendar-mobile mb-3">
+        <div class="calendar-card">
+            <div class="cal-header">
+                <button type="button" onclick="changeMonth(-1)">&#8249;</button>
+                <div class="cal-title" id="calTitleMobile"></div>
+                <button type="button" onclick="changeMonth(1)">&#8250;</button>
+            </div>
+            <div class="cal-grid" id="calGridMobile"></div>
+            <a class="clear-date" onclick="clearDate()">Clear date</a>
+        </div>
+    </div>
+</form>
+
+<div class="search-wrapper">
+
+    <!-- LEFT — Rides List -->
+    <div>
+        {% if rides %}
+            {% for ride in rides %}
+            <div class="card mb-3 p-3">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem;">
+                    <div>
+                        <div style="font-weight:700; color:#1B3A6B; font-size:1rem;">
+                            {{ ride.origin }} → {{ ride.destination }}
+                        </div>
+                        <div style="font-size:0.85rem; color:#888; margin-top:0.25rem;">
+                            {{ ride.departure_time.strftime('%d %b %Y at %H:%M') }}
+                        </div>
+                        <div style="font-size:0.85rem; color:#888;">
+                            Driver: {{ ride.driver.full_name }}
+                        </div>
+                    </div>
+                    <div style="display:flex; flex-direction:column; align-items:flex-end; gap:0.4rem;">
+                        {% if ride.available_seats > 0 %}
+                            <span class="badge badge-success">{{ ride.available_seats }} seat(s) left</span>
+                        {% else %}
+                            <span class="badge badge-danger">Full</span>
+                        {% endif %}
+                        <span class="badge
+                            {% if ride.status == 'active' %}badge-primary
+                            {% elif ride.status == 'delayed' %}badge-warning
+                            {% else %}badge-secondary{% endif %}">
+                            {{ ride.status | upper }}
+                        </span>
+                        <a href="/rides/{{ ride.id }}" class="btn btn-outline btn-sm">View Details</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state">
+                <div class="empty-icon">🚗</div>
+                <p>No rides found. Try a different search or date.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- RIGHT — Desktop Calendar -->
+    <div class="calendar-desktop">
+        <div class="calendar-card">
+            <div class="cal-header">
+                <button type="button" onclick="changeMonth(-1)">&#8249;</button>
+                <div class="cal-title" id="calTitleDesktop"></div>
+                <button type="button" onclick="changeMonth(1)">&#8250;</button>
+            </div>
+            <div class="cal-grid" id="calGridDesktop"></div>
+            <a class="clear-date" onclick="clearDate()">Clear date</a>
+        </div>
+    </div>
+
 </div>
 
-<!-- Rides List -->
-{% if rides %}
-    {% for ride in rides %}
-    <div class="card mb-3 p-3">
-        <div class="row align-items-center">
-            <div class="col-md-6">
-                <h5 style="color:#1B3A6B; margin-bottom:0.3rem;">
-                   📍 Pickup: {{ ride.origin }}
-                </h5>
-                <h5 style="color:#1B3A6B; margin-bottom:0.5rem;">
-                   🏁 Destination: {{ ride.destination }}
-                </h5>
-                <p class="mb-1 text-muted">
-                    <i class="bi bi-clock"></i> 
-                    {{ ride.departure_time.strftime('%d %b %Y at %H:%M') }}
-                </p>
-                <p class="mb-1 text-muted">
-                    <i class="bi bi-person"></i> Driver: {{ ride.driver.full_name }}
-                </p>
-            </div>
-            <div class="col-md-3 text-center">
-                {% if ride.available_seats > 0 %}
-                    <span class="badge bg-success fs-6">
-                        {{ ride.available_seats }} seat(s) left
-                    </span>
-                {% else %}
-                    <span class="badge bg-danger fs-6">Full</span>
-                {% endif %}
-                <br><br>
-                <span class="badge 
-                    {% if ride.status == 'active' %}bg-primary
-                    {% elif ride.status == 'cancelled' %}bg-danger
-                    {% elif ride.status == 'delayed' %}bg-warning
-                    {% elif ride.status == 'breakdown' %}bg-danger
-                    {% else %}bg-secondary{% endif %}">
-                    {{ ride.status | upper }}
-                </span>
-            </div>
-            <div class="col-md-3 text-end">
-                <a href="/rides/{{ ride.id }}" class="btn btn-outline-primary">
-                    View Details
-                </a>
-            </div>
-        </div>
-    </div>
-    {% endfor %}
-{% else %}
-    <div class="text-center mt-5">
-        <i class="bi bi-car-front" style="font-size:4rem; color:#ccc;"></i>
-        <p class="text-muted mt-3">No rides found. Try a different search.</p>
-    </div>
-{% endif %}
-
-
-<div id="chatBubble" style="
-    position:fixed;
-    bottom:1.5rem;
-    right:1.5rem;
-    z-index:1000;">
-
-    
+{% if current_user.role in ['student', 'staff', 'driver'] %}
+<div id="chatBubble" style="position:fixed; bottom:1.5rem; right:1.5rem; z-index:1000;">
     <button onclick="toggleChat()" style="
-        width:56px;
-        height:56px;
-        border-radius:50%;
+        width:56px; height:56px; border-radius:50%;
         background:linear-gradient(135deg,#1B3A6B,#2E75B6);
-        border:none;
-        color:white;
-        font-size:1.5rem;
-        cursor:pointer;
+        border:none; color:white; font-size:1.5rem; cursor:pointer;
         box-shadow:0 4px 15px rgba(27,58,107,0.4);
-        display:flex;
-        align-items:center;
-        justify-content:center;
-        transition:transform 0.2s;">
+        display:flex; align-items:center; justify-content:center;">
         💬
     </button>
-
-    
     <div id="chatPopup" style="
-        display:none;
-        position:absolute;
-        bottom:4rem;
-        right:0;
-        width:300px;
-        background:white;
-        border-radius:16px;
-        box-shadow:0 8px 30px rgba(0,0,0,0.15);
-        overflow:hidden;">
-
-        
-        <div style="background:linear-gradient(135deg,#1B3A6B,#2E75B6);
-                    padding:1rem;
-                    color:white;">
-            <div style="font-weight:700; font-size:0.95rem;">💬 Ask Admin</div>
+        display:none; position:absolute; bottom:4rem; right:0;
+        width:300px; background:white; border-radius:16px;
+        box-shadow:0 8px 30px rgba(0,0,0,0.15); overflow:hidden;">
+        <div style="background:linear-gradient(135deg,#1B3A6B,#2E75B6); padding:1rem; color:white;">
+            <div style="font-weight:700; font-size:0.95rem;">Ask Admin</div>
             <div style="font-size:0.75rem; opacity:0.8;">We usually reply within a few hours</div>
         </div>
-
-        
         <form method="POST" action="/inquiries/submit" style="padding:1rem;">
             <div class="form-group">
                 <select name="subject" class="form-control" style="font-size:0.85rem;" required>
                     <option value="">Select a topic...</option>
-                    <option value="Booking issue">🎫 Booking issue</option>
-                    <option value="Cannot find a ride">🔍 Cannot find a ride</option>
-                    <option value="Driver issue">🚨 Driver issue</option>
-                    <option value="Account problem">🔑 Account problem</option>
+                    <option value="Account problem">🔑 Account problems</option>
                     <option value="Safety concern">⚠️ Safety concern</option>
                     <option value="General question">💬 General question</option>
                 </select>
@@ -153,16 +220,95 @@
                           placeholder="Type your message..." required></textarea>
             </div>
             <button type="submit" class="btn btn-primary w-100" style="font-size:0.85rem;">
-                Send Message ✓
+                Send Message
             </button>
         </form>
     </div>
 </div>
+{% endif %}
 
 <script>
+const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+let today = new Date();
+let current = new Date(today.getFullYear(), today.getMonth(), 1);
+let selectedDateStr = '{{ request.args.get("date", "") }}';
+
+function pad(n) { return n.toString().padStart(2, '0'); }
+
+function renderCalendar() {
+    ['calTitleDesktop', 'calTitleMobile'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = months[current.getMonth()] + ' ' + current.getFullYear();
+    });
+
+    ['calGridDesktop', 'calGridMobile'].forEach(gridId => {
+        const grid = document.getElementById(gridId);
+        if (!grid) return;
+        grid.innerHTML = '';
+
+        days.forEach(d => {
+            const el = document.createElement('div');
+            el.className = 'cal-day-name';
+            el.textContent = d;
+            grid.appendChild(el);
+        });
+
+        const firstDay = new Date(current.getFullYear(), current.getMonth(), 1).getDay();
+        const daysInMonth = new Date(current.getFullYear(), current.getMonth() + 1, 0).getDate();
+
+        for (let i = 0; i < firstDay; i++) {
+            const el = document.createElement('div');
+            el.className = 'cal-day empty';
+            grid.appendChild(el);
+        }
+
+        for (let d = 1; d <= daysInMonth; d++) {
+            const el = document.createElement('div');
+            el.className = 'cal-day';
+            el.textContent = d;
+
+            const dateStr = current.getFullYear() + '-' + pad(current.getMonth() + 1) + '-' + pad(d);
+            if (dateStr === selectedDateStr) el.classList.add('selected');
+
+            const tStr = today.getFullYear() + '-' + pad(today.getMonth() + 1) + '-' + pad(today.getDate());
+            if (dateStr === tStr) el.classList.add('today');
+
+            el.onclick = () => selectDate(dateStr);
+            grid.appendChild(el);
+        }
+    });
+}
+
+function selectDate(dateStr) {
+    selectedDateStr = dateStr;
+    document.getElementById('selectedDate').value = dateStr;
+    document.getElementById('searchForm').submit();
+}
+
+function clearDate() {
+    selectedDateStr = '';
+    document.getElementById('selectedDate').value = '';
+    document.getElementById('searchForm').submit();
+}
+
+function changeMonth(dir) {
+    current.setMonth(current.getMonth() + dir);
+    renderCalendar();
+}
+
 function toggleChat() {
     const popup = document.getElementById('chatPopup');
     popup.style.display = popup.style.display === 'none' ? 'block' : 'none';
 }
+
+if (selectedDateStr) {
+    const parts = selectedDateStr.split('-');
+    current = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, 1);
+}
+
+renderCalendar();
 </script>
+
 {% endblock %}
