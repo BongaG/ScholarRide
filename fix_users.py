@@ -7,7 +7,7 @@ with app.app_context():
     for user in users:
         print(f'ID: {user.id} | Name: {user.full_name} | Email: {user.email} | Role: {user.role} | Verified: {user.verified}')
     
-    # Force verify and make admin the first user
+   
     user = User.query.filter_by(email='bongagazu10@gmail.com').first()
     if user:
         user.verified = True

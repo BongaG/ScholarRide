@@ -46,9 +46,12 @@
         Cancel Booking
     </a>
     {% endif %}
-    {% if booking.ride.status == 'completed' %}
+    {% if booking.ride.status == 'completed' and booking.status == 'confirmed' %}
     <a href="/rides/{{ booking.ride_id }}/review" class="btn btn-warning btn-sm mt-1">
-        ⭐ Rate Driver
+        Rate Driver
+    </a>
+    <a href="/rides/{{ booking.ride_id }}" class="btn btn-danger btn-sm mt-1">
+        Report Issue
     </a>
     {% endif %}
 </div>

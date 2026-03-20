@@ -2,7 +2,7 @@
 {% block content %}
 <div class="auth-wrapper">
     <div class="auth-card" style="max-width:520px;">
-        <h3>📝 Create Account</h3>
+        <h3>Create Account</h3>
         <form method="POST" action="/register" id="registerForm">
 
             <div class="form-group">
@@ -28,6 +28,18 @@
                            class="form-control" placeholder="e.g. 22202467" maxlength="8">
                     <small id="studentMsg"></small>
                 </div>
+                <div class="form-group">
+                    <label>Faculty</label>
+                    <select name="department" class="form-select">
+                        <option value="">-- Select Faculty --</option>
+                        <option>Faculty of Accounting and Informatics</option>
+                        <option>Applied Science</option>
+                        <option>Arts and Design</option>
+                        <option>Engineering and The Built Environment</option>
+                        <option>Health Science</option>
+                        <option>Management Sciences</option>
+                    </select>
+                </div>
             </div>
 
             <div id="staffFields" style="display:none;">
@@ -41,24 +53,19 @@
                     <label>Faculty</label>
                     <select name="department" class="form-select">
                         <option value="">-- Select Faculty --</option>
-                        <option>Faculty of Accouniting & Informatics</option>
+                        <option>Faculty of Accounting and Informatics</option>
                         <option>Applied Science</option>
-                        <option>Arts & Design</option>
-                        <option>Engineering & The Built Environment</option>
-                        <option>Health Science</option>
                         <option>Arts and Design</option>
-                        <option>Managsement Sciences</option>
-                        
-                        
+                        <option>Engineering and The Built Environment</option>
+                        <option>Health Science</option>
+                        <option>Management Sciences</option>
                     </select>
                 </div>
             </div>
 
             <div id="driverFields" style="display:none;">
-                <div class="form-group">
-                    <label>Student/Staff Number</label>
-                    <input type="text" name="driver_number"
-                           class="form-control" placeholder="e.g. 22202467 or ST00123">
+                <div class="alert" style="background:#f8faff; border-radius:8px; padding:0.75rem; border-left:4px solid #1B3A6B;">
+                    <small style="color:#1B3A6B;">Your driver code will be assigned by admin upon approval.</small>
                 </div>
             </div>
 

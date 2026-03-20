@@ -81,13 +81,24 @@ def approve_user(user_id):
     user = User.query.get_or_404(user_id)
     user.approval_status = 'approved'
 
+    if user.role == 'driver':
+        last_driver = User.query.filter(
+            User.driver_code != None
+        ).order_by(User.id.desc()).first()
+        if last_driver and last_driver.driver_code:
+            last_num = int(last_driver.driver_code.split('-')[1])
+            new_num = str(last_num + 1).zfill(3)
+        else:
+            new_num = '001'
+        user.driver_code = f'DR-{new_num}'
+
     otp = str(random.randint(100000, 999999))
     user.otp = otp
     db.session.commit()
 
     notif = Notification(
         user_id=user.id,
-        message='✅ Your registration has been approved! Check your email for your verification code.'
+        message='✅ Your  registration has been approved' 
     )
     db.session.add(notif)
     db.session.commit()
@@ -111,7 +122,7 @@ def approve_user(user_id):
 @admin_required
 def reject_user(user_id):
     user = User.query.get_or_404(user_id)
-    reason = request.form.get('reason', 'Your registration did not meet the requirements.')
+    reason = request.form.get('reason', 'Your registration did not meet the requirement.')
     user.approval_status = 'rejected'
     db.session.commit()
 
@@ -431,15 +442,21 @@ def add_vehicle():
     from scholar_ride.models import Vehicle
     if request.method == 'POST':
         bus_number = request.form.get('bus_number')
-        registration_number = request.form.get('registration_number')
+        registration_number = request.fform.get('registration_number')
         vehicle_type = request.form.get('vehicle_type')
         make_model = request.form.get('make_model')
         capacity = int(request.form.get('capacity'))
         notes = request.form.get('notes')
+        registration_number = registration_number.upper()
 
-        existing = Vehicle.query.filter_by(bus_number=bus_number).first()
-        if existing:
+        existing_bus = Vehicle.query.filter_by(bus_number=bus_number).first()
+        if existing_bus:
             flash('Bus number already exists.', 'danger')
+            return redirect('/admin/fleet/add')
+
+        existing_reg = Vehicle.query.filter_by(registration_number=registration_number).first()
+        if existing_reg:
+            flash('Registration number already exists.', 'danger')
             return redirect('/admin/fleet/add')
 
         vehicle = Vehicle(
