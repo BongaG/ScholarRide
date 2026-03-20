@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block content %}
-<div style="display:grid; grid-template-columns:1fr 1.2fr; gap:1.5rem; align-items:flex-start;">
+<div style="display:grid; grid-template-columns:{% if current_user.role == 'admin' %}1fr{% else %}1fr 1.2fr{% endif %}; gap:1.5rem; align-items:flex-start;">
 
     <!-- LEFT — Profile Info & Edit -->
     <div>
@@ -32,16 +32,31 @@
                     <div style="font-size:0.85rem; font-weight:600;">{{ current_user.phone }}</div>
                 </div>
                 <div style="background:#f8faff; border-radius:8px; padding:0.75rem;">
+                    {% if current_user.role == 'staff' %}
+                    <div style="font-size:0.75rem; color:#888;">Staff No.</div>
+                    <div style="font-size:0.85rem; font-weight:600;">{{ current_user.staff_number or 'N/A' }}</div>
+                    {% elif current_user.role == 'driver' %}
+                    <div style="font-size:0.75rem; color:#888;">Driver Code</div>
+                    <div style="font-size:0.85rem; font-weight:600;">{{ current_user.driver_code or 'Pending' }}</div>
+                    {% else  %}
                     <div style="font-size:0.75rem; color:#888;">Student No.</div>
                     <div style="font-size:0.85rem; font-weight:600;">{{ current_user.student_number or 'N/A' }}</div>
+                    {% endif %}
+                </div>
+                {% if current_user.role == 'driver', 'student' %}
+                <div style="background:#f8faff; border-radius:8px; padding:0.75rem;">
+                    <div style="font-size:0.75rem; color:#888;">Faculty</div>
+                    <div style="font-size:0.85rem; font-weight:600;">{{ current_user.department or 'N/A' }}</div>
                 </div>
                 <div style="background:#f8faff; border-radius:8px; padding:0.75rem;">
                     <div style="font-size:0.75rem; color:#888;">Department</div>
                     <div style="font-size:0.85rem; font-weight:600;">{{ current_user.department or 'N/A' }}</div>
                 </div>
+                {% endif %}
+                
             </div>
 
-            <!-- Edit Form -->
+            
             <h6 style="color:#1B3A6B;">Edit Details</h6>
             <hr>
             <form method="POST" action="/profile">
@@ -74,59 +89,61 @@
         </div>
     </div>
 
-    <!-- RIGHT — Ride History -->
-    <div>
-        <div class="card p-4">
-            <h6 style="color:#1B3A6B; margin-bottom:1rem;">
-                {% if current_user.role == 'driver' %}🚗 My Recent Rides{% else %}🎫 My Ride History{% endif %}
-            </h6>
-            <hr>
-            {% if history %}
-                {% for ride in history %}
-                <div style="padding:0.75rem 0; border-bottom:1px solid #f0f0f0;">
-                    <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:0.5rem; flex-wrap:wrap;">
-                        <div>
-                            <div style="font-weight:600; font-size:0.9rem; color:#1B3A6B;">
-                                {{ ride.origin }} → {{ ride.destination }}
-                            </div>
-                            <div style="font-size:0.8rem; color:#888; margin-top:0.2rem;">
-                                🕐 {{ ride.departure_time.strftime('%d %b %Y at %H:%M') }}
-                            </div>
+{% if current_user.role not in ['admin', 'driver'] %}
+<div>
+    <div class="card p-4">
+        <h6 style="color:#1B3A6B; margin-bottom:1rem;">
+            🎫 My Ride History
+        </h6>
+        <hr>
+        {% if history %}
+            {% for ride in history %}
+            <div style="padding:0.75rem 0; border-bottom:1px solid #f0f0f0;">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:0.5rem; flex-wrap:wrap;">
+                    <div>
+                        <div style="font-weight:600; font-size:0.9rem; color:#1B3A6B;">
+                            {{ ride.origin }} → {{ ride.destination }}
                         </div>
-                        <div style="display:flex; flex-direction:column; align-items:flex-end; gap:0.3rem;">
-                            <span class="badge
-                                {% if ride.status == 'active' %}badge-success
-                                {% elif ride.status == 'completed' %}badge-primary
-                                {% elif ride.status == 'cancelled' %}badge-danger
-                                {% elif ride.status == 'delayed' %}badge-warning
-                                {% else %}badge-secondary{% endif %}"
-                                style="font-size:0.7rem;">
-                                {{ ride.status | upper }}
-                            </span>
-                            <a href="/rides/{{ ride.id }}" class="btn btn-sm btn-outline"
-                               style="font-size:0.75rem; padding:0.2rem 0.6rem;">View</a>
+                        <div style="font-size:0.8rem; color:#888; margin-top:0.2rem;">
+                            {{ ride.departure_time.strftime('%d %b %Y at %H:%M') }}
                         </div>
                     </div>
-                </div>
-                {% endfor %}
-            {% else %}
-                <div class="empty-state">
-                    <div class="empty-icon">
-                        {% if current_user.role == 'driver' %}🚗{% else %}🎫{% endif %}
+                    <div style="display:flex; flex-direction:column; align-items:flex-end; gap:0.3rem;">
+                        <span class="badge
+                            {% if ride.status == 'active' %}badge-success
+                            {% elif ride.status == 'completed' %}badge-primary
+                            {% elif ride.status == 'cancelled' %}badge-danger
+                            {% elif ride.status == 'delayed' %}badge-warning
+                            {% else %}badge-secondary{% endif %}"
+                            style="font-size:0.7rem;">
+                            {{ ride.status | upper }}
+                        </span>
+                        <a href="/rides/{{ ride.id }}" class="btn btn-sm btn-outline"
+                           style="font-size:0.75rem; padding:0.2rem 0.6rem;">View</a>
                     </div>
-                    <p>No ride history yet.</p>
                 </div>
-            {% endif %}
-        </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state">
+                <div class="empty-icon">🎫</div>
+                <p>No ride history yet.</p>
+            </div>
+        {% endif %}
     </div>
+</div>
+{% endif %}
+    
+
 
 </div>
+
 
 <!-- Mobile: stack columns -->
 <style>
 @media (max-width: 768px) {
     .card { margin-bottom: 1rem; }
-    div[style*="grid-template-columns:1fr 1.2fr"] {
+    div[style*="grid-template-columns"] {
         display: block !important;
     }
 }
