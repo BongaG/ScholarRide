@@ -95,6 +95,11 @@ def register():
         if existing:
             flash('Email already registered.', 'danger')
             return redirect('/register')
+        
+        existing = User.query.filter_by(phone=phone).first()
+        if existing:
+            flash('Phone number already exist', 'danger')
+            return redirect('/register')
 
         hashed = bcrypt.generate_password_hash(password).decode('utf-8')
 
