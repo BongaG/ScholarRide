@@ -107,6 +107,77 @@
                 <small id="matchText"></small>
             </div>
 
+           <div class="form-group mt-3">
+                <div style="display:flex; align-items:flex-start; gap:0.75rem;">
+                    <input type="checkbox" name="privacy_consent" id="privacy_consent"
+                           style="margin-top:0.25rem; width:16px; height:16px; flex-shrink:0;" required>
+                    <label for="privacy_consent" style="font-size:0.85rem; color:#555; cursor:pointer;">
+                        I have read and agree to the
+                        <a href="#" onclick="openPrivacy(); return false;"
+                           style="color:#1B3A6B; font-weight:600;">Scholar-Ride Privacy Policy</a>
+                        and consent to the collection and processing of my personal information in accordance with POPIA.
+                    </label>
+                </div>
+            </div>
+
+            <!-- Privacy Modal -->
+            <div id="privacyModal" style="
+                display:none;
+                position:fixed;
+                top:0; left:0;
+                width:100%; height:100%;
+                background:rgba(0,0,0,0.5);
+                z-index:9999;
+                overflow-y:auto;">
+                <div style="
+                    background:white;
+                    max-width:600px;
+                    margin:2rem auto;
+                    border-radius:16px;
+                    padding:2rem;
+                    position:relative;">
+                    <button onclick="closePrivacy()" style="
+                        position:absolute;
+                        top:1rem; right:1rem;
+                        background:none;
+                        border:none;
+                        font-size:1.5rem;
+                        cursor:pointer;
+                        color:#888;">✕</button>
+                    <h4 style="color:#1B3A6B; margin-bottom:1.5rem;">Privacy Policy</h4>
+
+                    <div style="max-height:60vh; overflow-y:auto; padding-right:0.5rem;">
+                        <h6 style="color:#1B3A6B;">1. Introduction</h6>
+                        <p style="font-size:0.85rem; color:#555;">Scholar-Ride is a campus transport management system developed exclusively for the Durban University of Technology (DUT) community. We are committed to protecting your personal information in accordance with POPIA.</p>
+
+                        <h6 style="color:#1B3A6B;">2. Information We Collect</h6>
+                        <p style="font-size:0.85rem; color:#555;">We collect your full name, DUT email, phone number, student or staff number, faculty, ride history and booking information.</p>
+
+                        <h6 style="color:#1B3A6B;">3. How We Use Your Information</h6>
+                        <p style="font-size:0.85rem; color:#555;">Your information is used solely to verify your DUT identity, facilitate ride bookings, send notifications, and ensure safety and accountability on the platform.</p>
+
+                        <h6 style="color:#1B3A6B;">4. How We Protect Your Information</h6>
+                        <p style="font-size:0.85rem; color:#555;">All passwords are encrypted. Student numbers and registration plates are only visible to authorised users. Access is restricted based on user roles.</p>
+
+                        <h6 style="color:#1B3A6B;">5. Sharing of Information</h6>
+                        <p style="font-size:0.85rem; color:#555;">Scholar-Ride does not sell or share your personal information with any third parties.</p>
+
+                        <h6 style="color:#1B3A6B;">6. Your Rights Under POPIA</h6>
+                        <p style="font-size:0.85rem; color:#555;">You have the right to access, correct, or request deletion of your personal information. You may also lodge a complaint with the Information Regulator of South Africa.</p>
+
+                        <h6 style="color:#1B3A6B;">7. Data Retention</h6>
+                        <p style="font-size:0.85rem; color:#555;">Your information is retained for as long as your account is active. Deleting your account removes all associated personal data permanently.</p>
+
+                        <h6 style="color:#1B3A6B;">8. Contact</h6>
+                        <p style="font-size:0.85rem; color:#555;">For any questions about this policy contact the Scholar-Ride administrator through the platform.</p>
+                    </div>
+
+                    <button onclick="agreeAndClose()" class="btn btn-primary w-100 mt-3">
+                        I Agree
+                    </button>
+                </div>
+            </div>
+
             <button type="submit" class="btn btn-primary btn-block mt-2">
                 Register
             </button>
@@ -240,5 +311,21 @@ confirmInput.addEventListener('input', function() {
         matchText.style.color = 'red';
     }
 });
+</script>
+<script>
+function openPrivacy() {
+    document.getElementById('privacyModal').style.display = 'block';
+}
+function closePrivacy() {
+    document.getElementById('privacyModal').style.display = 'none';
+}
+function agreeAndClose() {
+    document.getElementById('privacy_consent').checked = true;
+    closePrivacy();
+}
+window.onclick = function(e) {
+    const modal = document.getElementById('privacyModal');
+    if (e.target === modal) closePrivacy();
+}
 </script>
 {% endblock %}

@@ -240,6 +240,8 @@
         </ul>
     </nav>
 
+    
+
     <div class="container">
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
@@ -255,7 +257,13 @@
         {% block content %}{% endblock %}
     </div>
 
+    <div style="text-align:center; padding:1rem; font-size:0.75rem; color:#888; border-top:1px solid #f0f0f0; margin-top:2rem;">
+        <a href="/privacy" style="color:#888;">Privacy Policy</a> &nbsp;|&nbsp; Scholar-Ride &copy; 2026 — DUT Campus Transport
+    </div>
+
     <script>
+    
+    
     function toggleNav() {
         const nav = document.getElementById('navLinks');
         nav.classList.toggle('open');

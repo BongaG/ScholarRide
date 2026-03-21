@@ -9,7 +9,7 @@ notifications = Blueprint('notifications', __name__)
 @notifications.route('/notifications')
 @login_required
 def index():
-    selected_date = request.args.get('date', '')
+    selected_date = request.args.get('date', datetime.now().strftime('%Y-%m-%d'))
     query = Notification.query.filter_by(user_id=current_user.id)
 
     if selected_date:
