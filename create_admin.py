@@ -4,6 +4,7 @@ from scholar_ride import bcrypt
 
 app = create_app()
 with app.app_context():
+       # admin user creation    
     existing = User.query.filter_by(email='bongagazu10@gmail.com').first()
     if existing:
         existing.role = 'admin'
