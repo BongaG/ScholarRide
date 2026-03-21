@@ -5,6 +5,8 @@ from flask_login import login_required, current_user
 from flask_mail import Message
 from flask import current_app
 import random
+import secrets
+from datetime import timedelta
 
 auth = Blueprint('auth', __name__)
 
@@ -49,6 +51,7 @@ def register():
         staff_number = request.form.get('staff_number')
         driver_number = request.form.get('driver_number')
         department = request.form.get('department')
+        faculty = request.form.get('faculty')
 
         if password != confirm:
             flash('Passwords do not match.', 'danger')
@@ -130,7 +133,7 @@ def register():
             approval_status='pending',
             student_number=student_number if role == 'student' else driver_number if role == 'driver' else None,
             staff_number=staff_number if role == 'staff' else None,
-            department=department if role in ['student', 'staff'] else None,
+            department=faculty if role == 'student' else department if role == 'staff' else None,
         )
         db.session.add(user)
         db.session.commit()
@@ -201,8 +204,23 @@ def login():
             session['otp_email'] = email
             return redirect('/verify-otp')
 
-        session.permanent = True
-        login_user(user, remember=False)
+        if user.role == 'admin':
+            # Reject second device login attempt
+            if user.session_token is not None:
+                flash('Admin is already logged in on another device. Access denied.', 'danger')
+                return redirect('/login')
+
+            # First device — allow login and set token
+            token = secrets.token_hex(32)
+            user.session_token = token
+            db.session.commit()
+            session['admin_token'] = token
+            session.permanent = False
+            login_user(user, remember=True, duration=timedelta(days=365))
+
+        else:
+            session.permanent = True
+            login_user(user, remember=False)
 
         unread = Notification.query.filter_by(user_id=user.id, is_read=False).count()
         if unread > 0:
@@ -223,6 +241,9 @@ def login():
 @auth.route('/logout')
 def logout():
     from flask_login import logout_user
+    if current_user.is_authenticated and current_user.role == 'admin':
+        current_user.session_token = None
+        db.session.commit()
     logout_user()
     flash('You have been logged out.', 'info')
     return redirect('/login')

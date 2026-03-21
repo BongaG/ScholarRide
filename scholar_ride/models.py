@@ -28,6 +28,7 @@ class User(db.Model, UserMixin):
 
     rides = db.relationship('Ride', backref='driver', lazy=True)
     bookings = db.relationship('Booking', backref='student', lazy=True)
+    session_token = db.Column(db.String(100), nullable=True)
 
 class Ride(db.Model):
     id = db.Column(db.Integer, primary_key=True)
