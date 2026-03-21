@@ -17,12 +17,18 @@
 .info-item .val { font-size: 0.9rem; font-weight: 600; color: #222; }
 @media (max-width: 768px) {
     .detail-wrapper { flex-direction: column; }
+    .detail-left, .detail-right { width: 100%; }
     .map-card { position: static; }
-    #map { height: 250px; }
-    .info-grid { grid-template-columns: 1fr 1fr; }
+    #map { height: 220px; }
+    .info-grid { grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+    .info-item { padding: 0.5rem; }
+    .page-header { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+    .route-info { gap: 0.5rem; padding: 0.5rem; }
 }
 @media (max-width: 480px) {
-    .info-grid { grid-template-columns: 1fr; }
+    .info-grid { grid-template-columns: 1fr 1fr; }
+    .info-item .val { font-size: 0.82rem; }
+    .info-item .lbl { font-size: 0.7rem; }
 }
 </style>
 

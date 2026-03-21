@@ -310,8 +310,10 @@ def profile():
         new_password = request.form.get('new_password')
         confirm_password = request.form.get('confirm_password')
 
-        current_user.full_name = full_name
-        current_user.phone = phone
+        if full_name:
+            current_user.full_name = full_name
+        if phone:
+            current_user.phone = phone
 
         if new_password:
             if new_password != confirm_password:

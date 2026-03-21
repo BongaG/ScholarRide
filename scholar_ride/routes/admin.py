@@ -442,7 +442,7 @@ def add_vehicle():
     from scholar_ride.models import Vehicle
     if request.method == 'POST':
         bus_number = request.form.get('bus_number')
-        registration_number = request.fform.get('registration_number')
+        registration_number = request.form.get('registration_number')
         vehicle_type = request.form.get('vehicle_type')
         make_model = request.form.get('make_model')
         capacity = int(request.form.get('capacity'))

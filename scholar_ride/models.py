@@ -43,6 +43,7 @@ class Ride(db.Model):
     vehicle_type = db.Column(db.String(50), nullable=True)
     vehicle_model = db.Column(db.String(100), nullable=True)
     registration_number = db.Column(db.String(20), nullable=True)
+    completed_at = db.Column(db.DateTime, nullable=True)
 
 class Booking(db.Model):
     id = db.Column(db.Integer, primary_key=True)
