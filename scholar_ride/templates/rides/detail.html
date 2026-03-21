@@ -57,6 +57,7 @@
                     <div class="val">{{ ride.vehicle_type or 'N/A' }}</div>
                     <div style="font-size:0.8rem; color:#666;">{{ ride.vehicle_model or '' }}</div>
                 </div>
+                {% if current_user.role in ['admin', 'driver'] %}
                 <div class="info-item">
                     <div class="lbl">🔢 Registration</div>
                     <div class="val">{{ ride.registration_number or 'N/A' }}</div>

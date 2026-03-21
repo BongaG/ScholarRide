@@ -1,5 +1,5 @@
-from scholar_ride import create_app, db
-from scholar_ride.models import User
+from scholar_ride import create_app, db # pyright: ignore[reportMissingImports]
+from scholar_ride.models import User # pyright: ignore[reportMissingImports]
 
 app = create_app()
 with app.app_context():
