@@ -1,11 +1,12 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="page-header">
-    <h4>📊 Analytics Dashboard</h4>
+<div class="d-flex justify-between align-center mb-4">
+    <h4 style="color:#1B3A6B; margin:0;">Analytics Dashboard</h4>
+    <a href="/admin" class="btn btn-outline btn-sm">← Back to Dashboard</a>
 </div>
 
 
-<div class="row mb-4">
+<div class="row mb-4" style="margin-top: 1.5rem;">
     <div class="col">
         <div class="stat-card">
             <div class="stat-icon">👥</div>
@@ -43,7 +44,7 @@
     </div>
 </div>
 
-<div class="row mb-4">
+<div class="row mb-4" style="margin-top:1.5rem;">
    
     <div class="col">
         <div class="card p-3">
@@ -111,11 +112,20 @@
             </div>
             <div class="mb-2">
                 <div class="d-flex justify-between mb-1">
-                    <span>Breakdown/Delayed</span>
+                    <span>Breakdown</span>
                     <strong>{{ breakdown_rides }}</strong>
                 </div>
                 <div class="sr-bar">
-                    <div class="sr-bar-fill" style="width:{{ (breakdown_rides / total_rides * 100) if total_rides > 0 else 0 }}%; background:#f39c12;"></div>
+                    <div class="sr-bar-fill" style="width:{{ (breakdown_rides / total_rides * 100) if total_rides > 0 else 0 }}%; background:#e74c3c;"></div>
+                </div>
+            </div>
+            <div class="mb-2">
+                <div class="d-flex justify-between mb-1">
+                    <span>Delayed</span>
+                    <strong>{{ delayed_rides }}</strong>
+                </div>
+                <div class="sr-bar">
+                    <div class="sr-bar-fill" style="width:{{ (delayed_rides / total_rides * 100) if total_rides > 0 else 0 }}%; background:#f39c12;"></div>
                 </div>
             </div>
         </div>
@@ -164,9 +174,16 @@
             {% if top_drivers %}
                 {% for driver in top_drivers %}
                 <div class="d-flex justify-between align-center mb-2 p-2" style="background:#f8faff; border-radius:8px;">
-                    <div>
-                        <strong>{{ driver.full_name }}</strong><br>
-                        <small class="text-muted">{{ driver.ride_count }} rides</small>
+                    <div style="display:flex; align-items:center; gap:0.75rem;">
+                        <div style="width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.85rem;
+                            background:{% if loop.index == 1 %}#f39c12{% elif loop.index == 2 %}#888{% else %}#cd7f32{% endif %};
+                            color:white;">
+                            {{ loop.index }}
+                        </div>
+                        <div>
+                            <strong>{{ driver.full_name }}</strong><br>
+                            <small class="text-muted">{{ driver.ride_count }} rides</small>
+                        </div>
                     </div>
                     <span class="badge badge-warning">{{ driver.avg_rating }}⭐</span>
                 </div>

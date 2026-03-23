@@ -1,11 +1,12 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="page-header">
-    <h4>🗄️ Database Viewer</h4>
+<div class="d-flex justify-between align-center mb-4">
+    <h4 style="color:#1B3A6B; margin:0;">Database Viewer</h4>
+    <a href="/admin" class="btn btn-outline btn-sm">← Back to Dashboard</a>
 </div>
 
 <!-- USERS -->
-<div class="card p-3 mb-4">
+<div class="card p-3 mb-4" style="margin-top: 1.5rem;">
     <h6 style="color:#1B3A6B;" class="mb-3">👥 Users ({{ users|length }})</h6>
     <table>
         <thead>

@@ -341,8 +341,8 @@ def analytics():
     active_rides = Ride.query.filter_by(status='active').count()
     completed_rides = Ride.query.filter_by(status='completed').count()
     cancelled_rides = Ride.query.filter_by(status='cancelled').count()
-    breakdown_rides = Ride.query.filter(Ride.status.in_(['breakdown', 'delayed'])).count()
-
+    breakdown_rides = Ride.query.filter_by(status='breakdown').count()
+    delayed_rides = Ride.query.filter_by(status='delayed').count()
     confirmed_bookings = Booking.query.filter_by(status='confirmed').count()
     pending_bookings = Booking.query.filter_by(status='pending').count()
     cancelled_bookings = Booking.query.filter_by(status='cancelled').count()
@@ -355,7 +355,7 @@ def analytics():
      .join(Ride, Ride.driver_id == User.id)\
      .group_by(User.id)\
      .order_by(func.avg(Review.rating).desc())\
-     .limit(5).all()
+     .limit(3).all()
 
     top_drivers = []
     for driver, avg_rating, ride_count in top_drivers_raw:
@@ -369,7 +369,7 @@ def analytics():
         func.count(Ride.id).label('count')
     ).group_by(Ride.origin, Ride.destination)\
      .order_by(func.count(Ride.id).desc())\
-     .limit(5).all()
+     .limit(3).all()
 
     recent_users = User.query.order_by(User.created_at.desc()).limit(10).all()
 
@@ -393,7 +393,8 @@ def analytics():
         cancelled_bookings=cancelled_bookings,
         top_drivers=top_drivers,
         popular_routes=popular_routes,
-        recent_users=recent_users
+        recent_users=recent_users,
+        delayed_rides=delayed_rides
     )
 
 
