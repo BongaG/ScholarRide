@@ -242,7 +242,7 @@
             {% for d in disputes %}
             <tr>
                 <td>{{ d.id }}</td>
-                <td>{{ d.reporter.full_name }}</td>
+                <td>{{ d.reported_by_user.full_name }}</td>
                 <td>{{ d.accused.full_name }}</td>
                 <td>{{ d.description[:50] }}...</td>
                 <td><span class="badge badge-warning">{{ d.status }}</span></td>
