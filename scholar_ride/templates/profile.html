@@ -1,11 +1,19 @@
 {% extends "base.html" %}
 {% block content %}
-<div style="display:grid; grid-template-columns:1fr 1.2fr; gap:1.5rem; align-items:flex-start;">
+
+<style>
+@media (max-width: 768px) {
+    .profile-wrapper { display: block !important; }
+    .card { margin-bottom: 1rem; }
+}
+</style>
+
+<div class="profile-wrapper" style="display:grid; grid-template-columns:{% if current_user.role == 'admin' %}1fr{% else %}1fr 1.2fr{% endif %}; gap:1.5rem; align-items:flex-start;">
 
     <!-- LEFT — Profile Info & Edit -->
     <div>
         <div class="card p-4 mb-3">
-            <h4 style="color:#1B3A6B; margin-bottom:1rem;">👤 My Profile</h4>
+            <h4 style="color:#1B3A6B; margin-bottom:1rem;">My Profile</h4>
 
             <!-- Avatar & Name -->
             <div style="text-align:center; margin-bottom:1.5rem;">
@@ -31,29 +39,40 @@
                     <div style="font-size:0.75rem; color:#888;">Phone</div>
                     <div style="font-size:0.85rem; font-weight:600;">{{ current_user.phone }}</div>
                 </div>
+                {% if current_user.role != 'admin' %}
                 <div style="background:#f8faff; border-radius:8px; padding:0.75rem;">
+                    {% if current_user.role == 'staff' %}
+                    <div style="font-size:0.75rem; color:#888;">Staff No.</div>
+                    <div style="font-size:0.85rem; font-weight:600;">{{ current_user.staff_number or 'N/A' }}</div>
+                    {% elif current_user.role == 'driver' %}
+                    <div style="font-size:0.75rem; color:#888;">Driver Code</div>
+                    <div style="font-size:0.85rem; font-weight:600;">{{ current_user.driver_code or 'Pending' }}</div>
+                    {% else %}
                     <div style="font-size:0.75rem; color:#888;">Student No.</div>
                     <div style="font-size:0.85rem; font-weight:600;">{{ current_user.student_number or 'N/A' }}</div>
+                    {% endif %}
                 </div>
+                {% endif %}
+                {% if current_user.role in ['student', 'staff'] %}
                 <div style="background:#f8faff; border-radius:8px; padding:0.75rem;">
-                    <div style="font-size:0.75rem; color:#888;">Department</div>
+                    <div style="font-size:0.75rem; color:#888;">Faculty</div>
                     <div style="font-size:0.85rem; font-weight:600;">{{ current_user.department or 'N/A' }}</div>
                 </div>
+                {% endif %}
             </div>
 
-            <!-- Edit Form -->
             <h6 style="color:#1B3A6B;">Edit Details</h6>
             <hr>
             <form method="POST" action="/profile">
                 <div class="form-group">
-                    <label>Full Name</label>
-                    <input type="text" name="full_name" class="form-control"
-                           value="{{ current_user.full_name }}" required>
-                </div>
-                <div class="form-group">
                     <label>Phone Number</label>
                     <input type="text" name="phone" class="form-control"
-                           value="{{ current_user.phone }}" required>
+                           value="{{ current_user.phone }}"
+                           maxlength="10"
+                           pattern="[0-9]{10}"
+                           title="Phone number must be exactly 10 digits"
+                           required>
+                    <small class="text-muted">10 digits only</small>
                 </div>
                 <hr>
                 <h6 style="color:#1B3A6B;">Change Password
@@ -74,11 +93,12 @@
         </div>
     </div>
 
-    <!-- RIGHT — Ride History -->
+    <!-- RIGHT — Ride History (hidden for admin) -->
+    {% if current_user.role in ['student', 'staff', 'driver'] %}
     <div>
         <div class="card p-4">
             <h6 style="color:#1B3A6B; margin-bottom:1rem;">
-                {% if current_user.role == 'driver' %}🚗 My Recent Rides{% else %}🎫 My Ride History{% endif %}
+                {% if current_user.role == 'driver' %}My Recent Rides{% else %}My Ride History{% endif %}
             </h6>
             <hr>
             {% if history %}
@@ -90,7 +110,7 @@
                                 {{ ride.origin }} → {{ ride.destination }}
                             </div>
                             <div style="font-size:0.8rem; color:#888; margin-top:0.2rem;">
-                                🕐 {{ ride.departure_time.strftime('%d %b %Y at %H:%M') }}
+                                {{ ride.departure_time.strftime('%d %b %Y at %H:%M') }}
                             </div>
                         </div>
                         <div style="display:flex; flex-direction:column; align-items:flex-end; gap:0.3rem;">
@@ -119,17 +139,8 @@
             {% endif %}
         </div>
     </div>
+    {% endif %}
 
 </div>
-
-<!-- Mobile: stack columns -->
-<style>
-@media (max-width: 768px) {
-    .card { margin-bottom: 1rem; }
-    div[style*="grid-template-columns:1fr 1.2fr"] {
-        display: block !important;
-    }
-}
-</style>
 
 {% endblock %}
