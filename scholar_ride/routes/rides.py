@@ -2,8 +2,9 @@ from flask import Blueprint, render_template, request, redirect, flash
 from flask_login import login_required, current_user
 from scholar_ride import db
 from scholar_ride.models import Ride, Booking
-from datetime import datetime
+from datetime import datetime, timedelta
 from scholar_ride.models import Ride, Booking, Notification, User
+
 
 rides = Blueprint('rides', __name__)
 
@@ -133,6 +134,9 @@ def update_ride(ride_id):
 
     new_status = request.form.get('status')
     ride.status = new_status
+    if new_status == 'completed':
+        from datetime import datetime
+        ride.completed_at = datetime.now()
     db.session.commit()
 
     if new_status in ['cancelled', 'delayed', 'breakdown', 'completed']:
@@ -286,9 +290,8 @@ def leave_review(ride_id):
         flash('You can only review a ride after it has been completed.', 'warning')
         return redirect('/bookings/my')
 
-    from datetime import datetime, timedelta
-    if ride.departure_time < datetime.utcnow() - timedelta(minutes=30):
-        flash('The 30 Minutes review window for this ride has closed.', 'warning')
+    if not ride.completed_at or ride.completed_at < datetime.now() - timedelta(minutes=30):
+        flash('The 30 minute review window for this ride has closed.', 'warning')
         return redirect('/bookings/my')
 
     existing = Review.query.filter_by(

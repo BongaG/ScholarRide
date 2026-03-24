@@ -5,6 +5,8 @@ from flask_login import login_required, current_user
 from flask_mail import Message
 from flask import current_app
 import random
+import secrets
+from datetime import timedelta
 
 auth = Blueprint('auth', __name__)
 
@@ -25,12 +27,15 @@ def send_email(to_email, subject, body):
 
 
 @auth.route('/')
-def home():
+def landing():
     if current_user.is_authenticated:
-        return redirect('/rides')
+        if current_user.role == 'admin':
+            return redirect('/admin')
+        elif current_user.role == 'driver':
+            return redirect('/admin/fleet')
+        else:
+            return redirect('/rides')
     return render_template('index.html')
-
-
 
 
 @auth.route('/register', methods=['GET', 'POST'])
@@ -46,7 +51,7 @@ def register():
         staff_number = request.form.get('staff_number')
         driver_number = request.form.get('driver_number')
         department = request.form.get('department')
-        
+        faculty = request.form.get('faculty')
 
         if password != confirm:
             flash('Passwords do not match.', 'danger')
@@ -104,13 +109,16 @@ def register():
         if existing:
             flash('Email already registered.', 'danger')
             return redirect('/register')
-        
+
         existing = User.query.filter_by(phone=phone).first()
         if existing:
-            flash('Phone number already exist', 'danger')
+            flash('Phone number already exists.', 'danger')
             return redirect('/register')
 
-        
+        privacy_consent = request.form.get('privacy_consent')
+        if not privacy_consent:
+            flash('You must agree to the Privacy Policy to register.', 'danger')
+            return redirect('/register')
 
         hashed = bcrypt.generate_password_hash(password).decode('utf-8')
 
@@ -125,7 +133,7 @@ def register():
             approval_status='pending',
             student_number=student_number if role == 'student' else driver_number if role == 'driver' else None,
             staff_number=staff_number if role == 'staff' else None,
-            department=department if role in ['student', 'staff'] else None,
+            department=faculty if role == 'student' else department if role == 'staff' else None,
         )
         db.session.add(user)
         db.session.commit()
@@ -134,7 +142,7 @@ def register():
         for admin_user in admins:
             notif = Notification(
                 user_id=admin_user.id,
-                message=f'🔔 New registration pending approval: {full_name} ({role}) — {email}'
+                message=f'New registration pending approval: {full_name} ({role}) — {email}'
             )
             db.session.add(notif)
         db.session.commit()
@@ -196,14 +204,36 @@ def login():
             session['otp_email'] = email
             return redirect('/verify-otp')
 
-        login_user(user, remember=True)
+        if user.role == 'admin':
+            # Reject second device login attempt
+            if user.session_token is not None:
+                flash('Admin is already logged in on another device. Access denied.', 'danger')
+                return redirect('/login')
+
+            # First device — allow login and set token
+            token = secrets.token_hex(32)
+            user.session_token = token
+            db.session.commit()
+            session['admin_token'] = token
+            session.permanent = False
+            login_user(user, remember=True, duration=timedelta(days=365))
+
+        else:
+            session.permanent = True
+            login_user(user, remember=False)
 
         unread = Notification.query.filter_by(user_id=user.id, is_read=False).count()
         if unread > 0:
-            flash(f'You have {unread} unread notification(s). <a href="/notifications">', 'info')
+            flash(f'You have {unread} unread notification(s).', 'info')
 
         flash(f'Welcome back, {user.full_name}!', 'success')
-        return redirect('/rides')
+
+        if user.role == 'admin':
+            return redirect('/admin')
+        elif user.role == 'driver':
+            return redirect('/admin/fleet')
+        else:
+            return redirect('/rides')
 
     return render_template('auth/login.html')
 
@@ -211,6 +241,9 @@ def login():
 @auth.route('/logout')
 def logout():
     from flask_login import logout_user
+    if current_user.is_authenticated and current_user.role == 'admin':
+        current_user.session_token = None
+        db.session.commit()
     logout_user()
     flash('You have been logged out.', 'info')
     return redirect('/login')
@@ -310,8 +343,10 @@ def profile():
         new_password = request.form.get('new_password')
         confirm_password = request.form.get('confirm_password')
 
-        current_user.full_name = full_name
-        current_user.phone = phone
+        if full_name:
+            current_user.full_name = full_name
+        if phone:
+            current_user.phone = phone
 
         if new_password:
             if new_password != confirm_password:
@@ -336,15 +371,6 @@ def profile():
     return render_template('profile.html', history=history)
 
 
-
-@auth.route('/')
-def landing():
-    from flask_login import current_user
-    if current_user.is_authenticated:
-        if current_user.role == 'admin':
-            return redirect('/admin')
-        elif current_user.role == 'driver':
-            return redirect('/admin/fleet')
-        else:
-            return redirect('/rides')
-    return render_template('index.html')
+@auth.route('/privacy')
+def privacy():
+    return render_template('privacy.html')

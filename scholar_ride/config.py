@@ -1,5 +1,6 @@
 import os
 from dotenv import load_dotenv
+from datetime import timedelta
 
 load_dotenv()
 
@@ -13,3 +14,6 @@ class Config:
     MAIL_USERNAME = os.getenv('MAIL_USERNAME')
     MAIL_PASSWORD = os.getenv('MAIL_PASSWORD')
     MAPTILER_KEY = os.getenv('MAPTILER_KEY')
+    MAIL_DEFAULT_SENDER = ('ScholarRide', 'bongagazu10@gmail.com')
+    PERMANENT_SESSION_LIFETIME = timedelta(minutes=10)
+    SESSION_PERMANENT = True
