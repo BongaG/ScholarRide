@@ -405,6 +405,7 @@ def analytics():
 @admin_required
 def database_viewer():
     from scholar_ride.models import Review
+    from sqlalchemy import func
 
     users = User.query.order_by(User.created_at.desc()).all()
     rides = Ride.query.order_by(Ride.created_at.desc()).all()
@@ -413,15 +414,86 @@ def database_viewer():
     disputes = Dispute.query.order_by(Dispute.created_at.desc()).all()
     announcements = Announcement.query.order_by(Announcement.created_at.desc()).all()
 
+    user_booking_counts = {}
+    for u in users:
+        count = Booking.query.filter_by(student_id=u.id).count()
+        user_booking_counts[u.id] = count
+
+    driver_stats = []
+    drivers = User.query.filter_by(role='driver').all()
+    for driver in drivers:
+        total_rides = Ride.query.filter_by(driver_id=driver.id).count()
+        completed_rides = Ride.query.filter_by(driver_id=driver.id, status='completed').count()
+        total_passengers = db.session.query(func.count(Booking.id)).join(
+            Ride, Ride.id == Booking.ride_id
+        ).filter(
+            Ride.driver_id == driver.id,
+            Booking.status == 'confirmed'
+        ).scalar() or 0
+        avg_rating = db.session.query(func.avg(Review.rating)).filter_by(
+            driver_id=driver.id
+        ).scalar()
+        avg_rating = round(avg_rating, 1) if avg_rating else 'No reviews'
+        top_route = db.session.query(
+            Ride.origin, Ride.destination, func.count(Ride.id).label('cnt')
+        ).filter_by(driver_id=driver.id).group_by(
+            Ride.origin, Ride.destination
+        ).order_by(func.count(Ride.id).desc()).first()
+
+        driver_stats.append({
+            'driver': driver,
+            'total_rides': total_rides,
+            'completed_rides': completed_rides,
+            'total_passengers': total_passengers,
+            'avg_rating': avg_rating,
+            'top_route': f"{top_route.origin} → {top_route.destination}" if top_route else 'N/A'
+        })
+
+    faculties = db.session.query(
+        User.department,
+        func.count(User.id).label('member_count')
+    ).filter(
+        User.role.in_(['student', 'staff']),
+        User.department != None
+    ).group_by(User.department).all()
+
+    all_faculties = [
+        'Accounting and Informatics',
+        'Applied Science',
+        'Arts and Design',
+        'Engineering and The Built Environment',
+        'Health Science',
+        'Management Sciences'
+    ]
+
+    faculty_stats = []
+    for faculty in all_faculties:
+        member_count = User.query.filter(
+            User.role.in_(['student', 'staff']),
+            User.department == faculty
+        ).count()
+        total_bookings = db.session.query(func.count(Booking.id)).join(
+            User, User.id == Booking.student_id
+        ).filter(
+            User.department == faculty
+        ).scalar() or 0
+        faculty_stats.append({
+            'faculty': faculty,
+            'member_count': member_count,
+            'total_bookings': total_bookings
+        })
+
     return render_template('admin/database.html',
         users=users,
         rides=rides,
         bookings=bookings,
         reviews=reviews,
         disputes=disputes,
-        announcements=announcements
+        announcements=announcements,
+        user_booking_counts=user_booking_counts,
+        driver_stats=driver_stats,
+        faculty_stats=faculty_stats
     )
-
 
 @admin.route('/admin/fleet')
 @login_required

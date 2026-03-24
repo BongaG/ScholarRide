@@ -6,34 +6,124 @@
 </div>
 
 <!-- USERS -->
-<div class="card p-3 mb-4" style="margin-top: 1.5rem;">
+<!-- USERS -->
+<div class="card p-3 mb-4" style="margin-top:1.5rem;">
     <h6 style="color:#1B3A6B;" class="mb-3">👥 Users ({{ users|length }})</h6>
-    <table>
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Phone</th>
-                <th>Role</th>
-                <th>Verified</th>
-                <th>Joined</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for u in users %}
-            <tr>
-                <td>{{ u.id }}</td>
-                <td>{{ u.full_name }}</td>
-                <td>{{ u.email }}</td>
-                <td>{{ u.phone }}</td>
-                <td><span class="badge badge-primary">{{ u.role }}</span></td>
-                <td>{% if u.verified %}✅{% else %}❌{% endif %}</td>
-                <td>{{ u.created_at.strftime('%d %b %Y') }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <div style="overflow-x:auto;">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Role</th>
+                    <th>Verified</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in users %}
+                <tr>
+                    <td>{{ u.id }}</td>
+                    <td>{{ u.full_name }}</td>
+                    <td>
+                        <span class="badge
+                            {% if u.role == 'admin' %}badge-danger
+                            {% elif u.role == 'driver' %}badge-primary
+                            {% elif u.role == 'staff' %}badge-warning
+                            {% else %}badge-secondary{% endif %}">
+                            {{ u.role }}
+                        </span>
+                    </td>
+                    <td>{% if u.verified %}✅{% else %}❌{% endif %}</td>
+                    <td>
+                        {% if u.approval_status == 'approved' and u.verified %}
+                            <span class="badge badge-success">Active</span>
+                        {% elif u.approval_status == 'pending' %}
+                            <span class="badge badge-warning">Pending</span>
+                        {% elif u.approval_status == 'rejected' %}
+                            <span class="badge badge-danger">Rejected</span>
+                        {% else %}
+                            <span class="badge badge-secondary">Unverified</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <button onclick="showUser(
+                            '{{ u.full_name }}',
+                            '{{ u.email }}',
+                            '{{ u.phone }}',
+                            '{{ u.role }}',
+                            '{{ u.student_number or u.staff_number or u.driver_code or "N/A" }}',
+                            '{{ u.department or "N/A" }}',
+                            '{{ u.approval_status }}',
+                            '{{ u.created_at.strftime("%d %b %Y") }}',
+                            '{{ user_booking_counts.get(u.id, 0) }}'
+                        )" class="btn btn-sm btn-outline">See More</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- User Detail Modal -->
+<div id="userModal" style="
+    display:none;
+    position:fixed;
+    top:0; left:0;
+    width:100%; height:100%;
+    background:rgba(0,0,0,0.5);
+    z-index:9999;
+    overflow-y:auto;">
+    <div style="
+        background:white;
+        max-width:480px;
+        margin:3rem auto;
+        border-radius:16px;
+        overflow:hidden;
+        box-shadow:0 8px 30px rgba(0,0,0,0.2);">
+        <div style="background:linear-gradient(135deg,#1B3A6B,#2E75B6); padding:1.5rem; color:white; position:relative;">
+            <h5 style="margin:0; font-size:1.1rem;" id="modalName"></h5>
+            <span id="modalRole" style="font-size:0.8rem; opacity:0.8;"></span>
+            <button onclick="closeModal()" style="
+                position:absolute; top:1rem; right:1rem;
+                background:none; border:none; color:white;
+                font-size:1.3rem; cursor:pointer;">✕</button>
+        </div>
+        <div style="padding:1.5rem;">
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
+                <div style="background:#f8faff; border-radius:8px; padding:0.75rem;">
+                    <div style="font-size:0.72rem; color:#888;">Email</div>
+                    <div style="font-size:0.85rem; font-weight:600; word-break:break-all;" id="modalEmail"></div>
+                </div>
+                <div style="background:#f8faff; border-radius:8px; padding:0.75rem;">
+                    <div style="font-size:0.72rem; color:#888;">Phone</div>
+                    <div style="font-size:0.85rem; font-weight:600;" id="modalPhone"></div>
+                </div>
+                <div style="background:#f8faff; border-radius:8px; padding:0.75rem;">
+                    <div style="font-size:0.72rem; color:#888;" id="modalNumberLabel">Number</div>
+                    <div style="font-size:0.85rem; font-weight:600;" id="modalNumber"></div>
+                </div>
+                <div style="background:#f8faff; border-radius:8px; padding:0.75rem;">
+                    <div style="font-size:0.72rem; color:#888;">Faculty</div>
+                    <div style="font-size:0.85rem; font-weight:600;" id="modalFaculty"></div>
+                </div>
+                <div style="background:#f8faff; border-radius:8px; padding:0.75rem;">
+                    <div style="font-size:0.72rem; color:#888;">Account Status</div>
+                    <div style="font-size:0.85rem; font-weight:600;" id="modalStatus"></div>
+                </div>
+                <div style="background:#f8faff; border-radius:8px; padding:0.75rem;">
+                    <div style="font-size:0.72rem; color:#888;">Date Joined</div>
+                    <div style="font-size:0.85rem; font-weight:600;" id="modalJoined"></div>
+                </div>
+                <div style="background:#f8faff; border-radius:8px; padding:0.75rem; grid-column:span 2;">
+                    <div style="font-size:0.72rem; color:#888;">Total Bookings Made</div>
+                    <div style="font-size:1.1rem; font-weight:700; color:#1B3A6B;" id="modalBookings"></div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- RIDES -->
@@ -189,4 +279,115 @@
         </tbody>
     </table>
 </div>
+
+
+
+<!-- DRIVER ACTIVITY -->
+<div class="card p-3 mb-4">
+    <h6 style="color:#1B3A6B;" class="mb-3">🚗 Driver Activity</h6>
+    <div style="overflow-x:auto;">
+        {% if driver_stats %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Driver</th>
+                    <th>Code</th>
+                    <th>Email</th>
+                    <th>Total Rides</th>
+                    <th>Completed</th>
+                    <th>Passengers Carried</th>
+                    <th>Avg Rating</th>
+                    <th>Top Route</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for d in driver_stats %}
+                <tr>
+                    <td><strong>{{ d.driver.full_name }}</strong></td>
+                    <td>{{ d.driver.driver_code or 'Pending' }}</td>
+                    <td>{{ d.driver.email }}</td>
+                    <td>{{ d.total_rides }}</td>
+                    <td>{{ d.completed_rides }}</td>
+                    <td>{{ d.total_passengers }}</td>
+                    <td>
+                        {% if d.avg_rating != 'No reviews' %}
+                            <span class="badge badge-warning">{{ d.avg_rating }} ⭐</span>
+                        {% else %}
+                            <span class="text-muted">No reviews</span>
+                        {% endif %}
+                    </td>
+                    <td style="font-size:0.85rem;">{{ d.top_route }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+            <p class="text-muted">No drivers registered yet.</p>
+        {% endif %}
+    </div>
+</div>
+
+
+<div class="card p-3 mb-4">
+    <h6 style="color:#1B3A6B;" class="mb-3">🎓 Faculty Statistics</h6>
+    <div style="overflow-x:auto;">
+        <table>
+            <thead>
+                <tr>
+                    <th>Faculty</th>
+                    <th>Total Members</th>
+                    <th>Total Bookings</th>
+                    <th>Avg Bookings Per Member</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for f in faculty_stats %}
+                <tr>
+                    <td><strong>{{ f.faculty }}</strong></td>
+                    <td>{{ f.member_count }}</td>
+                    <td>{{ f.total_bookings }}</td>
+                    <td>
+                        {% if f.member_count > 0 %}
+                            {{ (f.total_bookings / f.member_count) | round(1) }}
+                        {% else %}
+                            0
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+function showUser(name, email, phone, role, number, faculty, status, joined, bookings) {
+    document.getElementById('modalName').textContent = name;
+    document.getElementById('modalRole').textContent = role.toUpperCase();
+    document.getElementById('modalEmail').textContent = email;
+    document.getElementById('modalPhone').textContent = phone;
+    document.getElementById('modalNumber').textContent = number;
+    document.getElementById('modalFaculty').textContent = faculty;
+    document.getElementById('modalStatus').textContent = status;
+    document.getElementById('modalJoined').textContent = joined;
+    document.getElementById('modalBookings').textContent = bookings;
+
+    const label = document.getElementById('modalNumberLabel');
+    if (role === 'student') label.textContent = 'Student No.';
+    else if (role === 'staff') label.textContent = 'Staff No.';
+    else if (role === 'driver') label.textContent = 'Driver Code';
+    else label.textContent = 'Number';
+
+    document.getElementById('userModal').style.display = 'block';
+}
+
+function closeModal() {
+    document.getElementById('userModal').style.display = 'none';
+}
+
+window.onclick = function(e) {
+    const modal = document.getElementById('userModal');
+    if (e.target === modal) closeModal();
+}
+</script>
 {% endblock %}
