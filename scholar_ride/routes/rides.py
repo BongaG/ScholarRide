@@ -88,6 +88,7 @@ def my_rides():
 @rides.route('/rides/<int:ride_id>')
 @login_required
 def ride_detail(ride_id):
+    from scholar_ride.models import OverflowRequest
     ride = Ride.query.get_or_404(ride_id)
     bookings = Booking.query.filter_by(ride_id=ride_id).all()
 
@@ -101,12 +102,25 @@ def ride_detail(ride_id):
             already_booked = True
             booking_status = existing.status
 
+    overflow_pending = OverflowRequest.query.filter_by(
+        original_ride_id=ride_id,
+        status='pending'
+    ).first() is not None
+    dispute_count = 0
+    if current_user.role in ['student', 'staff']:
+        from scholar_ride.models import Dispute
+        dispute_count = Dispute.query.filter_by(
+            reported_by=current_user.id,
+            ride_id=ride_id
+        ).count()
+
     return render_template('rides/detail.html',
                            ride=ride,
                            bookings=bookings,
                            already_booked=already_booked,
-                           booking_status=booking_status)
-
+                           booking_status=booking_status,
+                           overflow_pending=overflow_pending,
+                           dispute_count=dispute_count)
 
 @rides.route('/rides/<int:ride_id>/update', methods=['POST'])
 @login_required
@@ -159,6 +173,67 @@ def update_ride(ride_id):
             vehicle.current_ride_id = None
             db.session.commit()
 
+    if new_status == 'breakdown':
+        from scholar_ride.models import Vehicle, OverflowRequest
+        
+        vehicle = Vehicle.query.filter_by(current_ride_id=ride.id).first()
+        if vehicle:
+            vehicle.status = 'maintenance'
+            vehicle.current_driver_id = None
+            vehicle.current_ride_id = None
+            db.session.commit()
+
+        
+        existing = OverflowRequest.query.filter_by(
+            original_ride_id=ride.id,
+            status='pending'
+        ).first()
+
+        if not existing:
+            
+            replacement = Vehicle.query.filter_by(
+                status='available',
+                vehicle_type=ride.vehicle_type
+            ).filter(Vehicle.capacity >= ride.total_seats).first()
+
+            if replacement:
+                overflow = OverflowRequest(
+                    original_ride_id=ride.id,
+                    reason='breakdown'
+                )
+                db.session.add(overflow)
+                db.session.flush()
+
+                
+                drivers = User.query.filter_by(role='driver').all()
+                for driver in drivers:
+                    notif = Notification(
+                        user_id=driver.id,
+                        message=f'🚨 OVERFLOW|{overflow.id}|Emergency! Bus broke down on {ride.origin} → {ride.destination}. Vehicle {replacement.bus_number} ({replacement.registration_number}) is available for you to take.'
+                    )
+                    db.session.add(notif)
+
+                
+                admins = User.query.filter_by(role='admin').all()
+                for admin_user in admins:
+                    notif = Notification(
+                        user_id=admin_user.id,
+                        message=f'🚨 Breakdown on {ride.origin} → {ride.destination}. Replacement {replacement.bus_number} dispatched to drivers.'
+                    )
+                    db.session.add(notif)
+
+                db.session.commit()
+            else:
+                
+                admins = User.query.filter_by(role='admin').all()
+                for admin_user in admins:
+                    notif = Notification(
+                        user_id=admin_user.id,
+                        message=f'🚨 URGENT! Breakdown on {ride.origin} → {ride.destination} and NO replacement vehicle available!'
+                    )
+                    db.session.add(notif)
+                db.session.commit()
+
     flash(f'Ride status updated to {new_status}.', 'success')
     return redirect(f'/rides/{ride_id}')
 
@@ -170,6 +245,15 @@ def submit_dispute():
     reported_user_id = request.form.get('reported_user_id')
     ride_id = request.form.get('ride_id')
     description = request.form.get('description')
+
+    existing_count = Dispute.query.filter_by(
+        reported_by=current_user.id,
+        ride_id=ride_id
+    ).count()
+
+    if existing_count >= 2:
+        flash('You have reached the maximum of 2 reports for this ride.', 'warning')
+        return redirect(f'/rides/{ride_id}')
 
     dispute = Dispute(
         reported_by=current_user.id,
@@ -293,3 +377,193 @@ def broadcast_message(ride_id):
 
     flash(f'Message sent to {len(confirmed_bookings)} passenger(s).', 'success')
     return redirect(f'/rides/{ride_id}')
+@rides.route('/rides/<int:ride_id>/request-overflow', methods=['POST'])
+@login_required
+def request_overflow(ride_id):
+    from scholar_ride.models import Vehicle, OverflowRequest
+    ride = Ride.query.get_or_404(ride_id)
+
+    
+    if ride.available_seats > 0:
+        flash('This ride still has seats available.', 'warning')
+        return redirect(f'/rides/{ride_id}')
+
+    
+    existing = OverflowRequest.query.filter_by(
+        original_ride_id=ride_id,
+        status='pending'
+    ).first()
+    if existing:
+        flash('A replacement bus has already been requested. Please wait.', 'info')
+        return redirect(f'/rides/{ride_id}')
+
+    
+    vehicle = Vehicle.query.filter_by(
+        status='available',
+        vehicle_type=ride.vehicle_type
+    ).filter(Vehicle.capacity >= ride.total_seats).first()
+
+    if not vehicle:
+        flash('No replacement vehicle available right now. Admin has been notified.', 'warning')
+        
+        admins = User.query.filter_by(role='admin').all()
+        for admin_user in admins:
+            notif = Notification(
+                user_id=admin_user.id,
+                message=f'⚠️ Student {current_user.full_name} requested overflow for ride {ride.origin} → {ride.destination} but NO vehicle is available!'
+            )
+            db.session.add(notif)
+        db.session.commit()
+        return redirect(f'/rides/{ride_id}')
+
+    
+    overflow = OverflowRequest(
+        original_ride_id=ride_id,
+        requesting_student_id=current_user.id,
+        reason='full'
+    )
+    db.session.add(overflow)
+    db.session.flush()
+
+    
+    drivers = User.query.filter_by(role='driver').all()
+    for driver in drivers:
+        notif = Notification(
+            user_id=driver.id,
+            message=f'🚌 OVERFLOW|{overflow.id}|Bus is full on {ride.origin} → {ride.destination}. Vehicle {vehicle.bus_number} ({vehicle.registration_number}) is available for you to take.'
+        )
+        db.session.add(notif)
+
+    
+    admins = User.query.filter_by(role='admin').all()
+    for admin_user in admins:
+        notif = Notification(
+            user_id=admin_user.id,
+            message=f'🚌 Overflow triggered for {ride.origin} → {ride.destination} by {current_user.full_name}. Vehicle {vehicle.bus_number} notified to drivers.'
+        )
+        db.session.add(notif)
+
+    db.session.commit()
+    flash('Replacement bus requested! A driver will be assigned shortly. You will be notified.', 'success')
+    return redirect(f'/rides/{ride_id}')
+
+
+@rides.route('/rides/overflow/<int:overflow_id>/accept', methods=['POST'])
+@login_required
+def accept_overflow(overflow_id):
+    from scholar_ride.models import Vehicle, OverflowRequest
+    overflow = OverflowRequest.query.get_or_404(overflow_id)
+
+    if current_user.role != 'driver':
+        flash('Only drivers can accept overflow requests.', 'danger')
+        return redirect('/rides')
+
+    if overflow.status != 'pending':
+        flash('This overflow request has already been handled.', 'warning')
+        return redirect('/rides/my')
+
+    original_ride = overflow.original_ride
+
+    
+    vehicle = Vehicle.query.filter_by(
+        status='available',
+        vehicle_type=original_ride.vehicle_type
+    ).filter(Vehicle.capacity >= original_ride.total_seats).first()
+
+    if not vehicle:
+        flash('No vehicle available anymore.', 'danger')
+        return redirect('/rides/my')
+
+    
+    new_ride = Ride(
+        driver_id=current_user.id,
+        origin=original_ride.origin,
+        destination=original_ride.destination,
+        departure_time=original_ride.departure_time,
+        available_seats=vehicle.capacity,
+        total_seats=vehicle.capacity,
+        vehicle_type=vehicle.vehicle_type,
+        vehicle_model=vehicle.make_model,
+        registration_number=vehicle.registration_number
+    )
+    db.session.add(new_ride)
+    db.session.flush()
+
+    
+    vehicle.status = 'on_trip'
+    vehicle.current_driver_id = current_user.id
+    vehicle.current_ride_id = new_ride.id
+
+
+    overflow.status = 'accepted'
+    overflow.new_ride_id = new_ride.id
+
+    
+    if overflow.reason == 'breakdown':
+        bookings = Booking.query.filter_by(
+            ride_id=original_ride.id,
+            status='confirmed'
+        ).all()
+        for booking in bookings:
+            new_booking = Booking(
+                ride_id=new_ride.id,
+                student_id=booking.student_id,
+                status='confirmed'
+            )
+            db.session.add(new_booking)
+            booking.status = 'cancelled'
+            new_ride.available_seats -= 1
+
+            notif = Notification(
+                user_id=booking.student_id,
+                message=f'✅ Your booking has been transferred to a replacement bus ({vehicle.bus_number}) for {original_ride.origin} → {original_ride.destination}. Driver: {current_user.full_name}'
+            )
+            db.session.add(notif)
+
+    
+    elif overflow.reason == 'full' and overflow.requesting_student_id:
+        new_booking = Booking(
+            ride_id=new_ride.id,
+            student_id=overflow.requesting_student_id,
+            status='confirmed'
+        )
+        db.session.add(new_booking)
+        new_ride.available_seats -= 1
+
+        notif = Notification(
+            user_id=overflow.requesting_student_id,
+            message=f'✅ A replacement bus ({vehicle.bus_number}) has been assigned for you! {original_ride.origin} → {original_ride.destination}. Driver: {current_user.full_name}'
+        )
+        db.session.add(notif)
+
+    
+    notif = Notification(
+        user_id=current_user.id,
+        message=f'✅ You have been assigned {vehicle.bus_number} ({vehicle.registration_number}) for {original_ride.origin} → {original_ride.destination} at {original_ride.departure_time.strftime("%H:%M")}'
+    )
+    db.session.add(notif)
+
+  
+    other_drivers = User.query.filter(
+        User.role == 'driver',
+        User.id != current_user.id
+    ).all()
+    for driver in other_drivers:
+        notif = Notification(
+            user_id=driver.id,
+            message=f'ℹ️ Overflow trip for {original_ride.origin} → {original_ride.destination} has been accepted by {current_user.full_name}.'
+        )
+        db.session.add(notif)
+
+    
+    admins = User.query.filter_by(role='admin').all()
+    for admin_user in admins:
+        notif = Notification(
+            user_id=admin_user.id,
+            message=f'✅ Driver {current_user.full_name} accepted overflow for {original_ride.origin} → {original_ride.destination}. Vehicle: {vehicle.bus_number}'
+        )
+        db.session.add(notif)
+
+    db.session.commit()
+    flash(f'You have accepted the trip! Vehicle {vehicle.bus_number} is now assigned to you.', 'success')
+    return redirect(f'/rides/{new_ride.id}')

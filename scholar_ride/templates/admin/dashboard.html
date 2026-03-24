@@ -95,7 +95,6 @@
                     <th>Email</th>
                     <th>Role</th>
                     <th>Verified</th>
-                    <th>Change Role</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -117,19 +116,7 @@
                         {% endif %}
                     </td>
                     <td>{% if user.verified %}✅{% else %}❌{% endif %}</td>
-                    <td>
-                        <form method="POST"
-                              action="/admin/users/{{ user.id }}/role"
-                              style="display:flex; gap:4px;">
-                            <select name="role" class="form-control" style="padding:0.3rem; font-size:0.8rem;">
-                                <option value="student" {% if user.role == 'student' %}selected{% endif %}>Student</option>
-                                <option value="staff" {% if user.role == 'staff' %}selected{% endif %}>Staff</option>
-                                <option value="driver" {% if user.role == 'driver' %}selected{% endif %}>Driver</option>
-                                <option value="admin" {% if user.role == 'admin' %}selected{% endif %}>Admin</option>
-                            </select>
-                            <button type="submit" class="btn btn-sm btn-primary">Save</button>
-                        </form>
-                    </td>
+                   
                     <td style="display:flex; gap:4px;">
                         <a href="/admin/users/{{ user.id }}/toggle"
                            class="btn btn-sm btn-warning">

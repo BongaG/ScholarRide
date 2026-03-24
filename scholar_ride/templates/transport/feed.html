@@ -27,7 +27,9 @@
         <div style="display:flex; justify-content:space-between; align-items:flex-start;">
             <div>
                 <div style="font-weight:700; font-size:1rem; color:#1B3A6B;">{{ vehicle.bus_number }}</div>
+                {% if current_user.role in ['admin', 'driver'] %}
                 <div style="font-size:0.8rem; color:#888;">{{ vehicle.registration_number }}</div>
+                {% endif %}
                 <div style="font-size:0.8rem; color:#666; margin-top:0.2rem;">{{ vehicle.make_model }}</div>
             </div>
             <span class="badge
