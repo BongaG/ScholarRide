@@ -52,6 +52,7 @@ def post_ride():
         vehicle_type = request.form.get('vehicle_type')
         vehicle_model = request.form.get('vehicle_model')
         registration_number = request.form.get('registration_number')
+        bus_number=request.form.get('bus_number')
 
         departure_dt = datetime.strptime(
             f'{departure_date} {departure_time}', '%Y-%m-%d %H:%M'
@@ -66,7 +67,8 @@ def post_ride():
             total_seats=seats,
             vehicle_type=vehicle_type,
             vehicle_model=vehicle_model,
-            registration_number=registration_number
+            registration_number=registration_number,
+            bus_number=bus_number
         )
         db.session.add(ride)
         db.session.commit()

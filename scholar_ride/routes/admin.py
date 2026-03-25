@@ -625,7 +625,8 @@ def take_vehicle(vehicle_id):
             total_seats=vehicle.capacity,
             vehicle_type=vehicle.vehicle_type,
             vehicle_model=vehicle.make_model,
-            registration_number=vehicle.registration_number
+            registration_number=vehicle.registration_number,
+            bus_number=vehicle.bus_number
         )
         db.session.add(ride)
         db.session.flush()
