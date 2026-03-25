@@ -14,9 +14,7 @@ mail = Mail()
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
-    app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=10)
-    app.config['SESSION_PERMANENT'] = True
-
+    
     db.init_app(app)
     login_manager.init_app(app)
     bcrypt.init_app(app)

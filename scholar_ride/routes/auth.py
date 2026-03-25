@@ -219,8 +219,7 @@ def login():
             login_user(user, remember=True, duration=timedelta(days=365))
 
         else:
-            session.permanent = True
-            login_user(user, remember=False)
+            login_user(user, remember=True)
 
         unread = Notification.query.filter_by(user_id=user.id, is_read=False).count()
         if unread > 0:
