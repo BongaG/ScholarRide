@@ -74,7 +74,7 @@
         font-family: 'DM Sans', sans-serif;
     }
 
-    /* STAR RATING */
+    
     .star-rating-wrapper {
         text-align: center;
         margin-bottom: 2rem;
@@ -126,7 +126,7 @@
         transition: opacity 0.2s;
     }
 
-    /* COMMENT */
+    
     .comment-wrapper { margin-bottom: 1.5rem; }
 
     .comment-wrapper label {
@@ -155,7 +155,7 @@
         border-color: #1B3A6B;
     }
 
-    /* SUBMIT BUTTON */
+   
     .submit-btn {
         width: 100%;
         padding: 1rem;
@@ -188,7 +188,7 @@
 
     .back-link:hover { color: #1B3A6B; }
 
-    /* QUICK TAGS */
+    
     .quick-tags {
         display: flex;
         flex-wrap: wrap;
@@ -227,7 +227,7 @@
         <div class="review-body">
             <form method="POST" action="/rides/{{ ride.id }}/review" id="reviewForm">
 
-                <!-- Stars -->
+                
                 <div class="star-rating-wrapper">
                     <label class="section-label">Your Rating</label>
                     <div class="star-group">
@@ -245,7 +245,7 @@
                     <div class="rating-text" id="ratingText"></div>
                 </div>
 
-                <!-- Quick Tags -->
+                
                 <div class="comment-wrapper">
                     <label>Quick Tags</label>
                     <div class="quick-tags">
@@ -258,7 +258,7 @@
                     </div>
                 </div>
 
-                <!-- Comment -->
+                
                 <div class="comment-wrapper">
                     <label>Comment <span style="font-weight:400; text-transform:none; letter-spacing:0;">(optional)</span></label>
                     <textarea name="comment" id="commentBox" rows="3" 

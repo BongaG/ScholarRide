@@ -197,19 +197,19 @@
             <li><a href="/transport">🚌 Transport</a></li>
 
         {% elif current_user.role == 'driver' %}
-            <li><a href="/admin/fleet">🚌 Fleet</a></li>
-            <li><a href="/rides/my">🚗 My Rides</a></li>
-            <li><a href="/transport">🚌 Transport</a></li>
+            <li><a href="/admin/fleet"> Fleet</a></li>
+            <li><a href="/rides/my"> My Rides</a></li>
+            <li><a href="/transport"> Transport</a></li>
 
         {% elif current_user.role == 'admin' %}
-            <li><a href="/admin">⚙️ Admin</a></li>
-            <li><a href="/admin/fleet">🚌 Fleet</a></li>
-            <li><a href="/transport">🚌 Transport</a></li>
+            <li><a href="/admin"> Admin</a></li>
+            <li><a href="/admin/fleet"> Fleet</a></li>
+            <li><a href="/transport"> Transport</a></li>
         {% endif %}
 
         <li>
             <a href="/notifications" style="position:relative;">
-                🔔 Notifications
+                 Notifications
                 {% if unread_count > 0 %}
                 <span style="
                     position:absolute;
@@ -230,7 +230,7 @@
                 {% endif %}
                   </a>
                 </li>
-                    <li><a href="/profile">👤 Profile</a></li>
+                    <li><a href="/profile"> Profile</a></li>
                  <li><a href="/logout">← Logout</a></li>
 
                  {% else %}

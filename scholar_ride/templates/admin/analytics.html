@@ -16,28 +16,28 @@
     </div>
     <div class="col">
         <div class="stat-card">
-            <div class="stat-icon">🚗</div>
+            <div class="stat-icon"></div>
             <div class="stat-number">{{ total_rides }}</div>
             <div class="stat-label">Total Rides</div>
         </div>
     </div>
     <div class="col">
         <div class="stat-card">
-            <div class="stat-icon">🎫</div>
+            <div class="stat-icon"></div>
             <div class="stat-number">{{ total_bookings }}</div>
             <div class="stat-label">Total Bookings</div>
         </div>
     </div>
     <div class="col">
         <div class="stat-card">
-            <div class="stat-icon">⭐</div>
+            <div class="stat-icon"></div>
             <div class="stat-number">{{ total_reviews }}</div>
             <div class="stat-label">Total Reviews</div>
         </div>
     </div>
     <div class="col">
         <div class="stat-card">
-            <div class="stat-icon">⚠️</div>
+            <div class="stat-icon"></div>
             <div class="stat-number">{{ total_disputes }}</div>
             <div class="stat-label">Total Disputes</div>
         </div>
@@ -48,7 +48,7 @@
    
     <div class="col">
         <div class="card p-3">
-            <h6 style="color:#1B3A6B;" class="mb-3">👥 User Breakdown</h6>
+            <h6 style="color:#1B3A6B;" class="mb-3">User Breakdown</h6>
             <div class="mb-2">
                 <div class="d-flex justify-between mb-1">
                     <span>Students</span>
@@ -82,7 +82,7 @@
     
     <div class="col">
         <div class="card p-3">
-            <h6 style="color:#1B3A6B;" class="mb-3">🚗 Ride Status Breakdown</h6>
+            <h6 style="color:#1B3A6B;" class="mb-3">Ride Status Breakdown</h6>
             <div class="mb-2">
                 <div class="d-flex justify-between mb-1">
                     <span>Active</span>
@@ -134,7 +134,7 @@
   
     <div class="col">
         <div class="card p-3">
-            <h6 style="color:#1B3A6B;" class="mb-3">🎫 Booking Status</h6>
+            <h6 style="color:#1B3A6B;" class="mb-3"> Booking Status</h6>
             <div class="mb-2">
                 <div class="d-flex justify-between mb-1">
                     <span>Confirmed</span>
@@ -170,7 +170,7 @@
 <div class="row mb-4">
     <div class="col-2">
         <div class="card p-3">
-            <h6 style="color:#1B3A6B;" class="mb-3">🏆 Top Rated Drivers</h6>
+            <h6 style="color:#1B3A6B;" class="mb-3"> Top Rated Drivers</h6>
             {% if top_drivers %}
                 {% for driver in top_drivers %}
                 <div class="d-flex justify-between align-center mb-2 p-2" style="background:#f8faff; border-radius:8px;">
@@ -185,7 +185,7 @@
                             <small class="text-muted">{{ driver.ride_count }} rides</small>
                         </div>
                     </div>
-                    <span class="badge badge-warning">{{ driver.avg_rating }}⭐</span>
+                    <span class="badge badge-warning">{{ driver.avg_rating }}</span>
                 </div>
                 {% endfor %}
             {% else %}
@@ -197,7 +197,7 @@
   
     <div class="col">
         <div class="card p-3">
-            <h6 style="color:#1B3A6B;" class="mb-3">📍 Most Popular Routes</h6>
+            <h6 style="color:#1B3A6B;" class="mb-3"> Most Popular Routes</h6>
             {% if popular_routes %}
                 {% for route in popular_routes %}
                 <div class="d-flex justify-between align-center mb-2 p-2" style="background:#f8faff; border-radius:8px;">
@@ -214,7 +214,7 @@
 
 
 <div class="card p-3 mb-4">
-    <h6 style="color:#1B3A6B;" class="mb-3">🕐 Recent Registrations</h6>
+    <h6 style="color:#1B3A6B;" class="mb-3"> Recent Registrations</h6>
     <table>
         <thead>
             <tr>

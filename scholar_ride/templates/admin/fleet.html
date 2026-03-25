@@ -25,38 +25,53 @@
 <!-- Status Summary -->
 <div class="row mb-4">
     <div class="col">
-        <div class="stat-card">
-            <div class="stat-number" style="color:#27ae60;">
-                {{ vehicles | selectattr('status', 'equalto', 'available') | list | length }}
+        <a href="/admin/fleet?filter=available" style="text-decoration:none;">
+            <div class="stat-card" style="cursor:pointer; border:2px solid {% if filter == 'available' %}#27ae60{% else %}transparent{% endif %};">
+                <div class="stat-number" style="color:#27ae60;">
+                    {{ vehicles_all | selectattr('status', 'equalto', 'available') | list | length }}
+                </div>
+                <div class="stat-label">Available</div>
             </div>
-            <div class="stat-label">Available</div>
-        </div>
+        </a>
     </div>
     <div class="col">
-        <div class="stat-card">
-            <div class="stat-number" style="color:#1B3A6B;">
-                {{ vehicles | selectattr('status', 'equalto', 'on_trip') | list | length }}
+        <a href="/admin/fleet?filter=on_trip" style="text-decoration:none;">
+            <div class="stat-card" style="cursor:pointer; border:2px solid {% if filter == 'on_trip' %}#1B3A6B{% else %}transparent{% endif %};">
+                <div class="stat-number" style="color:#1B3A6B;">
+                    {{ vehicles_all | selectattr('status', 'equalto', 'on_trip') | list | length }}
+                </div>
+                <div class="stat-label">On Trip</div>
             </div>
-            <div class="stat-label">On Trip</div>
-        </div>
+        </a>
     </div>
     <div class="col">
-        <div class="stat-card">
-            <div class="stat-number" style="color:#f39c12;">
-                {{ vehicles | selectattr('status', 'equalto', 'maintenance') | list | length }}
+        <a href="/admin/fleet?filter=maintenance" style="text-decoration:none;">
+            <div class="stat-card" style="cursor:pointer; border:2px solid {% if filter == 'maintenance' %}#f39c12{% else %}transparent{% endif %};">
+                <div class="stat-number" style="color:#f39c12;">
+                    {{ vehicles_all | selectattr('status', 'equalto', 'maintenance') | list | length }}
+                </div>
+                <div class="stat-label">Maintenance</div>
             </div>
-            <div class="stat-label">Maintenance</div>
-        </div>
+        </a>
     </div>
     <div class="col">
-        <div class="stat-card">
-            <div class="stat-number" style="color:#e74c3c;">
-                {{ vehicles | selectattr('status', 'equalto', 'out_of_service') | list | length }}
+        <a href="/admin/fleet?filter=out_of_service" style="text-decoration:none;">
+            <div class="stat-card" style="cursor:pointer; border:2px solid {% if filter == 'out_of_service' %}#e74c3c{% else %}transparent{% endif %};">
+                <div class="stat-number" style="color:#e74c3c;">
+                    {{ vehicles_all | selectattr('status', 'equalto', 'out_of_service') | list | length }}
+                </div>
+                <div class="stat-label">Out of Service</div>
             </div>
-            <div class="stat-label">Out of Service</div>
-        </div>
+        </a>
     </div>
 </div>
+
+{% if filter %}
+<div style="margin-bottom:1rem; display:flex; align-items:center; gap:0.75rem;">
+    <span style="font-size:0.85rem; color:#888;">Showing: <strong style="color:#1B3A6B;">{{ filter | replace('_', ' ') | upper }}</strong></span>
+    <a href="/admin/fleet" class="btn btn-sm btn-outline">Show All</a>
+</div>
+{% endif %}
 
 <!-- Fleet Table -->
 <div class="card p-3" style="margin-top: 1.5rem;">
@@ -86,13 +101,19 @@
                 <td>{{ vehicle.make_model }}</td>
                 <td>{{ vehicle.capacity }} seats</td>
                 <td>
-                    <span class="badge
-                        {% if vehicle.status == 'available' %}badge-success
-                        {% elif vehicle.status == 'on_trip' %}badge-primary
-                        {% elif vehicle.status == 'maintenance' %}badge-warning
-                        {% else %}badge-danger{% endif %}">
-                        {{ vehicle.status | replace('_', ' ') | upper }}
-                    </span>
+                    {% if vehicle.status == 'on_trip' and vehicle.current_ride %}
+                        <a href="/rides/{{ vehicle.current_ride_id }}" style="text-decoration:none;">
+                            <span class="badge badge-primary" style="cursor:pointer;">
+                                ON TRIP
+                            </span>
+                        </a>
+                    {% elif vehicle.status == 'available' %}
+                        <span class="badge badge-success">AVAILABLE</span>
+                    {% elif vehicle.status == 'maintenance' %}
+                        <span class="badge badge-warning">MAINTENANCE</span>
+                    {% else %}
+                        <span class="badge badge-danger">OUT OF SERVICE</span>
+                    {% endif %}
                 </td>
                 <td>
                     {% if vehicle.current_driver %}

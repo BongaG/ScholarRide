@@ -78,7 +78,7 @@
     .cal-day { padding: 0.6rem 0.1rem; font-size: 0.9rem; }
 }
 
-/* DESKTOP */
+
 @media (min-width: 769px) {
     .calendar-mobile { display: none; }
     .calendar-desktop { display: block; }
@@ -91,7 +91,7 @@
     </div>
 </div>
 
-<!-- Search Form -->
+
 <form method="GET" action="/rides" id="searchForm">
     <input type="hidden" name="date" id="selectedDate" value="{{ request.args.get('date', '') }}">
     <div class="card p-3 mb-3">
@@ -114,7 +114,7 @@
         {% endif %}
     </div>
 
-    <!-- MOBILE CALENDAR — shown between search and rides -->
+    
     <div class="calendar-mobile mb-3">
         <div class="calendar-card">
             <div class="cal-header">
@@ -130,7 +130,7 @@
 
 <div class="search-wrapper">
 
-    <!-- LEFT — Rides List -->
+   
     <div>
         {% if rides %}
             {% for ride in rides %}
@@ -172,7 +172,7 @@
         {% endif %}
     </div>
 
-    <!-- RIGHT — Desktop Calendar -->
+    
     <div class="calendar-desktop">
         <div class="calendar-card">
             <div class="cal-header">

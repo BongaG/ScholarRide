@@ -502,8 +502,13 @@ def fleet():
         flash('Not authorised.', 'danger')
         return redirect('/rides')
     from scholar_ride.models import Vehicle
-    vehicles = Vehicle.query.order_by(Vehicle.bus_number).all()
-    return render_template('admin/fleet.html', vehicles=vehicles)
+    filter_status = request.args.get('filter', '')
+    vehicles_all = Vehicle.query.order_by(Vehicle.bus_number).all()
+    if filter_status:
+        vehicles = Vehicle.query.filter_by(status=filter_status).order_by(Vehicle.bus_number).all()
+    else:
+        vehicles = vehicles_all
+    return render_template('admin/fleet.html', vehicles=vehicles, vehicles_all=vehicles_all, filter=filter_status)
 
 
 @admin.route('/admin/fleet/add', methods=['GET', 'POST'])
